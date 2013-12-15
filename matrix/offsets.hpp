@@ -14,11 +14,18 @@ template <int NDims,
 	  typename Storage=std::array<TDim,NDims>>
 class Offsets
 {
+
+private:
+
+    Storage dim;
+
 public:
 
   const static TDim N = NDims;
-  Storage dim;
 
+  /*
+   * Constructors 
+   */
   Offsets()
   {
     for(int i=0; i<N; i++)
@@ -30,6 +37,21 @@ public:
   {
     for(int i=0; i<N; i++)
       this->dim[i] = dims[i];
+  }
+
+  void set_dim(TDim i, TDim d)
+  {
+    dim[i] = d;
+  }
+
+  TDim get_dim(TDim i)
+  {
+    return dim[i];
+  }
+  
+  TDim operator[](TDim i)
+  {
+    return dim[i];
   }
 
 };
