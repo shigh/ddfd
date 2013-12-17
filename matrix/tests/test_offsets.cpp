@@ -20,17 +20,13 @@ BOOST_AUTO_TEST_CASE( template_params )
   Offsets<2> off2;
   Offsets<3> off3;
 
-  Offsets<1, int> off4;
-  Offsets<2, int> off5;
-  Offsets<3, int> off6;
-
   // Its not meant to be used with C style arrays,
   // but just in case you really want to...
   // Alias the class instead of typing this
   // explicitly if you want this
-  Offsets<1, int, int[1]> off7;
-  Offsets<2, int, int[2]> off8;
-  Offsets<3, int, int[3]> off9;
+  Offsets<1, int[1]> off7;
+  Offsets<2, int[2]> off8;
+  Offsets<3, int[3]> off9;
 
 }
 
