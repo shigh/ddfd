@@ -9,7 +9,10 @@
 #include <vector>
 #include <array>
 
-
+/*
+ * Helper class for Offsets, used as a proxy
+ * for chained [] operators in Offsets
+ */
 template<typename T>
 class ProxyOffsets
 {
@@ -31,18 +34,30 @@ public:
     _curr   = 1;
   }
 
+  /*
+   * Chain the [] operators
+   */
   ProxyOffsets<T>& operator[](int i)
   {
     _offset += i*_base.offs[_curr++];
     return *this;
   }
 
+  /*
+   * Convert to integer offset
+   */
   operator int() { return _offset; }
   
 };
 
 
 /*
+ * Calculate the linear array offset in ndimensions.
+ *
+ * This is mostly for me to learn
+ *
+ * TODO: Add timing test
+ * 
  * I want this to work in CUDA kernels,
  * so no C++11 :(
  */
@@ -53,7 +68,17 @@ class Offsets
   template <typename T> friend class ProxyOffsets;
 private:
 
+  /*
+   * The numeric size of each dimension
+   */
   Storage dim;
+
+  /*
+   * The term multiplied by the element number to
+   * get the total offset
+   *
+   * offset[z][y][x] = z*offs[0] + y*offs[1] + x*offs[0]
+   */
   Storage offs;
 
   void calc_offs();
