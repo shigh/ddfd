@@ -1,0 +1,7 @@
+
+
+LAPACKINC = 
+LAPACKLIB = 
+
+LAPACK_LN_FLAGS = -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lm
+LAPACK_TYPE = LAPACK_MKL
