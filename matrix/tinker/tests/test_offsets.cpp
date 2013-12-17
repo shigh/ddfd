@@ -47,7 +47,36 @@ BOOST_AUTO_TEST_CASE( constructors )
   
 }
 
-BOOST_AUTO_TEST_CASE( offsets )
+
+BOOST_AUTO_TEST_CASE( offsets_1d )
+{
+
+  std::array<int, 1> dims = {5};
+  Offsets<1> off(dims);
+
+  int expected = 3;
+  int ind = off[3];
+
+  BOOST_CHECK_EQUAL( ind, expected );
+  
+}
+
+
+BOOST_AUTO_TEST_CASE( offsets_2d )
+{
+
+  std::array<int, 2> dims = {3, 4};
+  Offsets<2> off(dims);
+
+  int expected = 1*(4) + 2;
+  int ind = off[1][2];
+
+  BOOST_CHECK_EQUAL( ind, expected );
+  
+}
+
+
+BOOST_AUTO_TEST_CASE( offsets_3d )
 {
 
   std::array<int, 3> dims = {3, 4, 5};
@@ -56,6 +85,7 @@ BOOST_AUTO_TEST_CASE( offsets )
   int expected = 1*(4*5) + 2*(5) + 3;
   int ind = off[1][2][3];
 
+  BOOST_CHECK_EQUAL( ind, expected );
   
 }
 
