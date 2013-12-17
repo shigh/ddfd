@@ -20,10 +20,6 @@ BOOST_AUTO_TEST_CASE( template_params )
   Offsets<2> off2;
   Offsets<3> off3;
 
-  // Its not meant to be used with C style arrays,
-  // but just in case you really want to...
-  // Alias the class instead of typing this
-  // explicitly if you want this
   Offsets<1, int[1]> off7;
   Offsets<2, int[2]> off8;
   Offsets<3, int[3]> off9;
@@ -81,6 +77,47 @@ BOOST_AUTO_TEST_CASE( offsets_3d )
 
   std::array<int, 3> dims = {3, 4, 5};
   Offsets<3> off(dims);
+
+  int expected = 1*(4*5) + 2*(5) + 3;
+  int ind = off[1][2][3];
+
+  BOOST_CHECK_EQUAL( ind, expected );
+  
+}
+
+BOOST_AUTO_TEST_CASE( offsets_1d_c )
+{
+
+  std::array<int, 1> dims = {5};
+  Offsets<1, int[1]> off(dims);
+
+  int expected = 3;
+  int ind = off[3];
+
+  BOOST_CHECK_EQUAL( ind, expected );
+  
+}
+
+
+BOOST_AUTO_TEST_CASE( offsets_2d_c )
+{
+
+  std::array<int, 2> dims = {3, 4};
+  Offsets<2, int[2]> off(dims);
+
+  int expected = 1*(4) + 2;
+  int ind = off[1][2];
+
+  BOOST_CHECK_EQUAL( ind, expected );
+  
+}
+
+
+BOOST_AUTO_TEST_CASE( offsets_3d_c )
+{
+
+  std::array<int, 3> dims = {3, 4, 5};
+  Offsets<3, int[3]> off(dims);
 
   int expected = 1*(4*5) + 2*(5) + 3;
   int ind = off[1][2][3];
