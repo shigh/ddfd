@@ -47,10 +47,10 @@ public:
  * so no C++11 :(
  */
 template <int NDims,
-	  typename Storage=std::array<int,NDims>>
+	  typename Storage=std::array<int, NDims>>
 class Offsets
 {
-  template<typename T> friend class ProxyOffsets;
+  template <typename T> friend class ProxyOffsets;
 private:
 
   Storage dim;
@@ -62,6 +62,8 @@ public:
 
   const static int N = NDims;
 
+  typedef ProxyOffsets< Offsets<NDims, Storage> > ProxyType;
+
   /*
    * Constructors 
    */
@@ -69,6 +71,7 @@ public:
   {
     for(int i=0; i<N; i++)
       dim[i] = 0;
+    calc_offs();
   }
 
   template<typename T>
@@ -76,27 +79,14 @@ public:
   {
     for(int i=0; i<N; i++)
       this->dim[i] = dims[i];
+    calc_offs();
   }
 
-  void set_dim(int i, int d)
-  {
-    dim[i] = d;
-  }
+  void set_dim(int i, int d) { dim[i] = d; }
 
-  int get_dim(int i)
-  {
-    return dim[i];
-  }
+  int get_dim(int i) { return dim[i]; }
 
-  operator int() const
-  {
-    return 1;
-  }
-
-  int operator[](int z)
-  {
-    return z*offs[0];
-  }
+  ProxyType operator[](int z) { return ProxyType(*this, z); }
 
 };
 
@@ -107,14 +97,10 @@ void Offsets<NDims, Storage>::calc_offs()
   offs[N-1] = 1;
   for(int i=N-2; i>=0; i--)
     {
-      j = j*dim[i];
+      j = j*dim[i+1];
       offs[i] = j;
     }
 }
-
-
-
-
 
 
 #endif

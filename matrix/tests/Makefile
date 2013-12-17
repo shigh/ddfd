@@ -1,9 +1,9 @@
 
 CXX = g++
 CC  = $(CXX)
-CXXFLAGS += -I../ -g -std=c++0x -fopenmp
+CXXFLAGS += -I../ -g -std=c++11
 LDLIBS  += -lboost_unit_test_framework
-LDFLAGS += -fopenmp -std=c++0x 
+LDFLAGS += -fopenmp -std=c++11
 
 OBJS = tests.o test_offsets.o
 

@@ -47,4 +47,17 @@ BOOST_AUTO_TEST_CASE( constructors )
   
 }
 
+BOOST_AUTO_TEST_CASE( offsets )
+{
+
+  std::array<int, 3> dims = {3, 4, 5};
+  Offsets<3> off(dims);
+
+  int expected = 1*(4*5) + 2*(5) + 3;
+  int ind = off[1][2][3];
+
+  
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
