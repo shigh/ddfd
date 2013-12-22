@@ -1,12 +1,4 @@
-//-------------------------------------------
-//
-//MTH 995: Jacobi iteration on GPU for Poisson
-//
-//BY: Andrew Christlieb
-//
-// Concepts: Jacobi Iteration in CUDA 1D
-//
-//#include <iostream>
+
 #include <stdio.h>
 #include <math.h>
 #include <thrust/device_vector.h>
@@ -15,8 +7,9 @@
 #include "utils.hpp"
 
 __global__ void jacobi_2d(float dx, float *b_d, float *x_d, float *xnew_d,
-			       int nx, int ny)
+			  int nx, int ny)
 {
+
   //compute initial index via flatening
   int x      = threadIdx.x + blockIdx.x*blockDim.x;
   int y      = threadIdx.y + blockIdx.y*blockDim.y;
