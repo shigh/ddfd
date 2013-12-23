@@ -34,7 +34,7 @@ float l_inf_diff(thrust::device_vector<float>& a,
  */
 void copy_boundaries(thrust::device_vector<float>& A,
 		     thrust::device_vector<float>& B,
-		     int nx, int ny)
+		     int ny, int nx)
 {
 
   // First and last rows
