@@ -95,7 +95,9 @@ float jacobi(thrust::device_vector<float>& x_d,
 	call_jacobi_step(xnew_d, x_d, b_d, ny, dy, nx, dx);
 
       //l_infinity norm 
-      error = l_inf_diff(x_d, xnew_d);
+      // error = l_inf_diff(x_d, xnew_d);
+      error = two_norm(x_d, xnew_d); 
+
       std::cout << "i: " << i
 		<< " error: " << error << std::endl;
 

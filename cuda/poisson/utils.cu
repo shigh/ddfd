@@ -29,6 +29,31 @@ float l_inf_diff(thrust::device_vector<float>& a,
   return *max_it;
 }
 
+struct SquareDiff
+{
+  __host__ __device__
+  float operator()(float a, float b)
+  {
+    float k = a-b;
+    return k*k;
+  }
+
+};
+
+
+float two_norm(thrust::device_vector<float>& a,
+ 	       thrust::device_vector<float>& b)
+{
+  thrust::device_vector<float> tmp(a.size());
+  thrust::transform(a.begin(), a.end(), b.begin(),
+		    tmp.begin(), SquareDiff());
+
+  float sum = thrust::reduce(tmp.begin(), tmp.end(), (float) 0, thrust::plus<float>());
+  
+  return std::sqrt(sum);
+}
+
+
 /*
  * Copy boundaries from A into B
  */
