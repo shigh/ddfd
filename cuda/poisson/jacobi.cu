@@ -19,7 +19,7 @@ void jacobi_2d(float *x_d, float *xnew_d, float *b_d,
   int x0 = x;
   int tid, north, south, east, west;
 
-  float k  = dx*dx + dy*dy;
+  float k  =(dx*dx*dy*dy)/(dx*dx + dy*dy);
   float kx = k/(dx*dx);
   float ky = k/(dy*dy);
 
@@ -36,8 +36,8 @@ void jacobi_2d(float *x_d, float *xnew_d, float *b_d,
 
 	  if( x>0 && x<nx-1 && y>0 && y<ny-1)
 	    xnew_d[tid] = (k*b_d[tid] -
-			   ky*(x_d[north] + ky*x_d[south]) -
-			   kx*(x_d[west] + x_d[east]))/(-2.0);
+			   ky*(x_d[north] + x_d[south]) -
+			   kx*(x_d[west]  + x_d[east]))/(-2.0);
 
 	  x += blockDim.x;
 
@@ -50,9 +50,9 @@ void jacobi_2d(float *x_d, float *xnew_d, float *b_d,
 
 }
 
-void call_jacobi_step(thrust::device_vector<float>& x,
-		      thrust::device_vector<float>& xnew,
-		      thrust::device_vector<float>& b,
+void call_jacobi_step(thrust::device_vector<float>& x_d,
+		      thrust::device_vector<float>& xnew_d,
+		      thrust::device_vector<float>& b_d,
 		      int ny, float dy, int nx, float dx)
 {
 
@@ -60,21 +60,22 @@ void call_jacobi_step(thrust::device_vector<float>& x,
   dim3 dT(16, 16);
 
   //call Jacobi step
-  jacobi_2d<<<dB, dT>>>(thrust::raw_pointer_cast(&x[0]),
-			thrust::raw_pointer_cast(&xnew[0]),
-			thrust::raw_pointer_cast(&b[0]),
+  jacobi_2d<<<dB, dT>>>(thrust::raw_pointer_cast(&x_d[0]),
+			thrust::raw_pointer_cast(&xnew_d[0]),
+			thrust::raw_pointer_cast(&b_d[0]),
 			ny, dy, nx, dx);
   
 }
 
-float jacobi(thrust::device_vector<float>& x,
-	     thrust::device_vector<float>& b,
+float jacobi(thrust::device_vector<float>& x_d,
+	     thrust::device_vector<float>& b_d,
 	     int ny, float dy, int nx, float dx,
 	     int max_iter, float tol)
 {
    
-  thrust::device_vector<float> xnew(nx*ny, 0);
-  copy_boundaries(x, xnew, nx, ny);
+  thrust::device_vector<float> xnew_d(nx*ny, 0);
+  thrust::copy(x_d.begin(), x_d.end(), xnew_d.begin());
+  //copy_boundaries(x, xnew, nx, ny);
 
   // Set to -1 to keep the iteration count correct
   int i = -1;
@@ -89,65 +90,21 @@ float jacobi(thrust::device_vector<float>& x,
       
       //jacobi step
       if( i%2==0 )
-	call_jacobi_step(x, xnew, b, ny, dy, nx, dx);
+	call_jacobi_step(x_d, xnew_d, b_d, ny, dy, nx, dx);
       else
-	call_jacobi_step(xnew, x, b, ny, dy, nx, dx);
+	call_jacobi_step(xnew_d, x_d, b_d, ny, dy, nx, dx);
 
       //l_infinity norm 
-      error = l_inf_diff(x, xnew);
+      error = l_inf_diff(x_d, xnew_d);
+      std::cout << "i: " << i
+		<< " error: " << error << std::endl;
 
     }
 
   if( i%2==0 )
-    thrust::copy(xnew.begin(), xnew.end(), x.begin());
+    thrust::copy(xnew_d.begin(), xnew_d.end(), x_d.begin());
 
   return error;
 
 }
 
-// int main(void)
-// {
-//   int i;
-//   int max_cnt=100;
-//   float a=0;
-//   float b=1;
-//   int nx=40, ny=40;
-//   int N = nx*ny;
-//   float dx=(b-a)/((float) nx*ny-1);
-//   float RHB=3.0;
-//   float LHB=1.0;
-//   float tol=1.0e-6;
-
-//   thrust::host_vector<float> xn(N);
-//   thrust::host_vector<float> rhs(N);
-
-//   thrust::device_vector<float> xn_d(N);
-//   thrust::device_vector<float> rhs_d(N);
-
-//   for(i=0;i<nx*ny;i++){
-//     rhs[i] = 0.0;
-//     xn[i]  = 2.0;//((RHB-LHB)/(b-a))*(x-a)+LHB;
-//   };
-
-//   //set boundary conditions for poisson solve
-//   for(i=0; i<nx; i++)
-//     {
-//       xn[i]           = LHB;
-//       xn[nx*(ny-1)+i] = RHB;
-//     }
-
-//   for(i=0; i<ny; i++)
-//     {
-//       xn[nx*i]        = LHB;
-//       xn[(nx+1)*i]    = RHB;
-//     }
-
-//   thrust::copy(xn.begin(), xn.end(), xn_d.begin());
-//   thrust::copy(rhs.begin(), rhs.end(), rhs_d.begin());
-
-//   jacobi(tol, dx, max_cnt, nx, ny, rhs_d, xn_d);
-   
-//   // Copy from GPU
-//   thrust::copy(xn_d.begin(), xn_d.end(), xn.begin());
-
-// }
