@@ -14,11 +14,14 @@ void jacobi_2d(float *x_d, float *xnew_d, float *b_d,
 	       int ny, float dy, int nx, float dx)
 {
 
-  int x   = threadIdx.x + blockIdx.x*blockDim.x;
-  int y   = threadIdx.y + blockIdx.y*blockDim.y;
-  int x0  = x;
+  int x  = threadIdx.x + blockIdx.x*blockDim.x;
+  int y  = threadIdx.y + blockIdx.y*blockDim.y;
+  int x0 = x;
   int tid, north, south, east, west;
 
+  float k  = dx*dx + dy*dy;
+  float kx = k/(dx*dx);
+  float ky = k/(dy*dy);
 
   while(y < ny)
     {
@@ -32,10 +35,11 @@ void jacobi_2d(float *x_d, float *xnew_d, float *b_d,
 	  east  = tid + 1;
 
 	  if( x>0 && x<nx-1 && y>0 && y<ny-1)
-	    xnew_d[tid] = ((dx*dx)*b[tid]-x[north]-x[south]
-			   -x[west]-x[east])/(-4.0);
+	    xnew_d[tid] = (k*b_d[tid] -
+			   ky*(x_d[north] + ky*x_d[south]) -
+			   kx*(x_d[west] + x_d[east]))/(-2.0);
 
-	  x += blockIdx.x;
+	  x += blockDim.x;
 
 	}
 
@@ -56,17 +60,17 @@ void call_jacobi_step(thrust::device_vector<float>& x,
   dim3 dT(16, 16);
 
   //call Jacobi step
-  jacobi_2d<<<dB, dT>>>(thrust::raw_pointer_cast(&b[0]),
-			thrust::raw_pointer_cast(&x[0]),
+  jacobi_2d<<<dB, dT>>>(thrust::raw_pointer_cast(&x[0]),
 			thrust::raw_pointer_cast(&xnew[0]),
+			thrust::raw_pointer_cast(&b[0]),
 			ny, dy, nx, dx);
   
 }
 
 float jacobi(thrust::device_vector<float>& x,
-	    thrust::device_vector<float>& b,
-	    int ny, float dy, int nx, float dx,
-	    int max_iter, float tol)
+	     thrust::device_vector<float>& b,
+	     int ny, float dy, int nx, float dx,
+	     int max_iter, float tol)
 {
    
   thrust::device_vector<float> xnew(nx*ny, 0);
