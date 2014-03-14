@@ -7,7 +7,7 @@
 #include "utils.hpp"
 
 /*
- * 2D jacobi iteration
+ * 2D jacobi kernel
  */
 __global__
 void jacobi_2d(float *x_d, float *xnew_d, float *b_d,
@@ -49,6 +49,8 @@ void jacobi_2d(float *x_d, float *xnew_d, float *b_d,
     }
 
 }
+
+
 
 void call_jacobi_step_2d(thrust::device_vector<float>& x_d,
 						 thrust::device_vector<float>& xnew_d,
@@ -106,4 +108,62 @@ float jacobi_solve_2d(thrust::device_vector<float>& x_d,
 	return error;
 
 }
+
+/*
+ * 3D jacobi kernel
+ */
+__global__
+void jacobi_3d(float *x_d, float *xnew_d, float *b_d,
+			   int nz, float dz,
+			   int ny, float dy,
+			   int nx, float dx)
+{
+
+	int x  = threadIdx.x + blockIdx.x*blockDim.x;
+	int y  = threadIdx.y + blockIdx.y*blockDim.y;
+	int z  = threadIdx.z;
+	int x0 = x;
+	int y0 = y;
+	int tid, north, south, east, west, top, bottom;
+
+	float k  =(dx*dx*dy*dy*dz*dz)/(dx*dx + dy*dy + dz*dz);
+	float kx = k/(dx*dx);
+	float ky = k/(dy*dy);
+	float kz = k/(dz*dz);
+
+	while(z < nz)
+	{
+		while(y < ny)
+		{
+			while(x < nx)
+			{
+
+				tid   = x + y*nx;
+				north = tid + nx;
+				south = tid - nx;
+				west  = tid - 1;
+				east  = tid + 1;
+
+				if( x>0 && x<nx-1 && y>0 && y<ny-1)
+					xnew_d[tid] = (k*b_d[tid] -
+								   ky*(x_d[north] + x_d[south]) -
+								   kx*(x_d[west]  + x_d[east]))/(-2.0);
+
+				x += blockDim.x;
+
+			}
+
+			x = x0;
+			y += blockDim.y;
+
+		}
+
+		x = x0;
+		y = y0;
+		z += blockDim.z;
+
+	}
+
+}
+
 
