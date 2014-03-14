@@ -50,10 +50,10 @@ void jacobi_2d(float *x_d, float *xnew_d, float *b_d,
 
 }
 
-void call_jacobi_step(thrust::device_vector<float>& x_d,
-					  thrust::device_vector<float>& xnew_d,
-					  thrust::device_vector<float>& b_d,
-					  int ny, float dy, int nx, float dx)
+void call_jacobi_step_2d(thrust::device_vector<float>& x_d,
+						 thrust::device_vector<float>& xnew_d,
+						 thrust::device_vector<float>& b_d,
+						 int ny, float dy, int nx, float dx)
 {
 
 	dim3 dB(32, 32);
@@ -67,10 +67,10 @@ void call_jacobi_step(thrust::device_vector<float>& x_d,
   
 }
 
-float jacobi(thrust::device_vector<float>& x_d,
-			 thrust::device_vector<float>& b_d,
-			 int ny, float dy, int nx, float dx,
-			 int max_iter, float tol)
+float jacobi_solve_2d(thrust::device_vector<float>& x_d,
+					  thrust::device_vector<float>& b_d,
+					  int ny, float dy, int nx, float dx,
+					  int max_iter, float tol)
 {
    
 	thrust::device_vector<float> xnew_d(nx*ny, 0);
@@ -90,9 +90,9 @@ float jacobi(thrust::device_vector<float>& x_d,
       
 		//jacobi step
 		if( i%2==0 )
-			call_jacobi_step(x_d, xnew_d, b_d, ny, dy, nx, dx);
+			call_jacobi_step_2d(x_d, xnew_d, b_d, ny, dy, nx, dx);
 		else
-			call_jacobi_step(xnew_d, x_d, b_d, ny, dy, nx, dx);
+			call_jacobi_step_2d(xnew_d, x_d, b_d, ny, dy, nx, dx);
 
 		//l_infinity norm 
 		// error = l_inf_diff(x_d, xnew_d);

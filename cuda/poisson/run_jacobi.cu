@@ -37,7 +37,7 @@ int main(void)
 	thrust::copy(x.begin(), x.end(), x_d.begin());
 	thrust::copy(b.begin(), b.end(), b_d.begin());
 
-	error = jacobi(x_d, b_d, ny, dy, nx, dx, max_iter, tol);
+	error = jacobi_solve_2d(x_d, b_d, ny, dy, nx, dx, max_iter, tol);
    
 	// Copy from GPU
 	thrust::copy(x_d.begin(), x_d.end(), x.begin());
