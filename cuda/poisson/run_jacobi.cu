@@ -13,7 +13,7 @@
 
 int main(void)
 {
-	int max_iter = 500;
+	int max_iter = 5000;
 	float tol = 0.0001;
 	float error;
 
