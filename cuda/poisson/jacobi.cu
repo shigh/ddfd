@@ -138,16 +138,19 @@ void jacobi_3d(float *x_d, float *xnew_d, float *b_d,
 			while(x < nx)
 			{
 
-				tid   = x + y*nx;
-				north = tid + nx;
-				south = tid - nx;
-				west  = tid - 1;
-				east  = tid + 1;
+				tid    = x + y*nx + z*nx*ny;
+				north  = tid + nx;
+				south  = tid - nx;
+				west   = tid - 1;
+				east   = tid + 1;
+				top    = tid + nx*ny;
+				bottom = tid - nx*ny;
 
-				if( x>0 && x<nx-1 && y>0 && y<ny-1)
+				if( x>0 && x<nx-1 && y>0 && y<ny-1 && z>0 && z<nz-1)
 					xnew_d[tid] = (k*b_d[tid] -
 								   ky*(x_d[north] + x_d[south]) -
-								   kx*(x_d[west]  + x_d[east]))/(-2.0);
+								   kx*(x_d[west]  + x_d[east])  -
+								   kz*(x_d[top]  + x_d[bottom]))/(-6.0);
 
 				x += blockDim.x;
 
