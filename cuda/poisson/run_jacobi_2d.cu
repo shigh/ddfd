@@ -17,8 +17,8 @@ int main(void)
 	float tol = 0.0001;
 	float error;
 
-	int nx = 100;
-	int ny = 100;
+	int nx = 1000;
+	int ny = 1000;
 	float dx = 2*M_PI/(nx-1.);
 	float dy = 2*M_PI/(ny-1.);
 

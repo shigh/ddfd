@@ -37,7 +37,7 @@ void jacobi_2d(float *x_d, float *xnew_d, float *b_d,
 			if( x>0 && x<nx-1 && y>0 && y<ny-1)
 				xnew_d[tid] = (k*b_d[tid] -
 							   ky*(x_d[north] + x_d[south]) -
-							   kx*(x_d[west]  + x_d[east]))/(-2.0);
+							   kx*(x_d[west]  + x_d[east]))/(-4.0);
 
 			x += blockDim.x;
 
