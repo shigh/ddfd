@@ -170,3 +170,60 @@ void jacobi_3d(float *x_d, float *xnew_d, float *b_d,
 }
 
 
+void call_jacobi_step_3d(thrust::device_vector<float>& x_d,
+						 thrust::device_vector<float>& xnew_d,
+						 thrust::device_vector<float>& b_d,
+						 int nz, float dz, int ny, float dy, int nx, float dx)
+{
+
+	dim3 dB(32, 32);
+	dim3 dT(16, 16);
+
+	//call Jacobi step
+	jacobi_3d<<<dB, dT>>>(thrust::raw_pointer_cast(&x_d[0]),
+						  thrust::raw_pointer_cast(&xnew_d[0]),
+						  thrust::raw_pointer_cast(&b_d[0]),
+						  nz, dz, ny, dy, nx, dx);
+  
+}
+
+
+float jacobi_solve_3d(thrust::device_vector<float>& x_d,
+					  thrust::device_vector<float>& b_d,
+					  int nz, float dz, int ny, float dy, int nx, float dx,
+					  int max_iter, float tol)
+{
+   
+	thrust::device_vector<float> xnew_d(nx*ny*nz, 0);
+	thrust::copy(x_d.begin(), x_d.end(), xnew_d.begin());
+	//copy_boundaries(x, xnew, nx, ny);
+
+	// Set to -1 to keep the iteration count correct
+	int i = -1;
+	// Init error >tol to avoid tripping condition in while
+	// before the first iteration
+	float error = tol + 1;
+
+	while( error > tol && i < max_iter )
+    {
+
+		i++;
+      
+		//jacobi step
+		if( i%2==0 )
+			call_jacobi_step_3d(x_d, xnew_d, b_d, nz, dz, ny, dy, nx, dx);
+		else
+			call_jacobi_step_3d(xnew_d, x_d, b_d, nz, dz, ny, dy, nx, dx);
+
+		//l_infinity norm 
+		// error = l_inf_diff(x_d, xnew_d);
+		error = two_norm(x_d, xnew_d); 
+
+    }
+
+	if( i%2==0 )
+		thrust::copy(xnew_d.begin(), xnew_d.end(), x_d.begin());
+
+	return error;
+
+}

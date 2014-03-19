@@ -14,5 +14,10 @@ float jacobi_solve_2d(thrust::device_vector<float>& x,
 					  int ny, float dy, int nx, float dx,
 					  int max_iter, float tol);
 
+float jacobi_solve_3d(thrust::device_vector<float>& x,
+					  thrust::device_vector<float>& b,
+					  int nz, float dz, int ny, float dy, int nx, float dx,
+					  int max_iter, float tol);
+
 
 #endif
