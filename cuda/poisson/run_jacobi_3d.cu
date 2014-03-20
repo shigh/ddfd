@@ -35,7 +35,7 @@ int main(void)
 	for(int k=0; k<nz; k++)
 		for(int i=0; i<ny; i++)
 			for(int j=0; j<nx; j++)
-				b[i+j*nx+k*nx*ny] = sin(j*dx)*sin(i*dy)*sin(k*dz);
+				b[j+i*nx+k*nx*ny] = sin(j*dx)*sin(i*dy)*sin(k*dz);
 
 	thrust::copy(x.begin(), x.end(), x_d.begin());
 	thrust::copy(b.begin(), b.end(), b_d.begin());
