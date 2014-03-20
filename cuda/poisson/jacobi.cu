@@ -37,7 +37,7 @@ void jacobi_2d(float *x_d, float *xnew_d, float *b_d,
 			if( x>0 && x<nx-1 && y>0 && y<ny-1)
 				xnew_d[tid] = (k*b_d[tid] -
 							   ky*(x_d[north] + x_d[south]) -
-							   kx*(x_d[west]  + x_d[east]))/(-4.0);
+							   kx*(x_d[west]  + x_d[east]))/(-2.0);
 
 			x += blockDim.x;
 
@@ -69,10 +69,10 @@ void call_jacobi_step_2d(thrust::device_vector<float>& x_d,
   
 }
 
-float jacobi_solve_2d(thrust::device_vector<float>& x_d,
-					  thrust::device_vector<float>& b_d,
-					  int ny, float dy, int nx, float dx,
-					  int max_iter, float tol)
+IterationStats jacobi_solve_2d(thrust::device_vector<float>& x_d,
+							   thrust::device_vector<float>& b_d,
+							   int ny, float dy, int nx, float dx,
+							   int max_iter, float tol)
 {
    
 	thrust::device_vector<float> xnew_d(nx*ny, 0);
@@ -105,7 +105,7 @@ float jacobi_solve_2d(thrust::device_vector<float>& x_d,
 	if( i%2==0 )
 		thrust::copy(xnew_d.begin(), xnew_d.end(), x_d.begin());
 
-	return error;
+	return IterationStats(error, i+1);
 
 }
 
@@ -150,7 +150,7 @@ void jacobi_3d(float *x_d, float *xnew_d, float *b_d,
 					xnew_d[tid] = (k*b_d[tid] -
 								   ky*(x_d[north] + x_d[south]) -
 								   kx*(x_d[west]  + x_d[east])  -
-								   kz*(x_d[top]  + x_d[bottom]))/(-6.0);
+								   kz*(x_d[top]  + x_d[bottom]))/(-2.0);
 
 				x += blockDim.x;
 
@@ -177,7 +177,7 @@ void call_jacobi_step_3d(thrust::device_vector<float>& x_d,
 {
 
 	dim3 dB(32, 32);
-	dim3 dT(16, 16);
+	dim3 dT(16, 16, 1);
 
 	//call Jacobi step
 	jacobi_3d<<<dB, dT>>>(thrust::raw_pointer_cast(&x_d[0]),
@@ -188,10 +188,10 @@ void call_jacobi_step_3d(thrust::device_vector<float>& x_d,
 }
 
 
-float jacobi_solve_3d(thrust::device_vector<float>& x_d,
-					  thrust::device_vector<float>& b_d,
-					  int nz, float dz, int ny, float dy, int nx, float dx,
-					  int max_iter, float tol)
+IterationStats jacobi_solve_3d(thrust::device_vector<float>& x_d,
+							   thrust::device_vector<float>& b_d,
+							   int nz, float dz, int ny, float dy,
+							   int nx, float dx, int max_iter, float tol)
 {
    
 	thrust::device_vector<float> xnew_d(nx*ny*nz, 0);
@@ -224,6 +224,6 @@ float jacobi_solve_3d(thrust::device_vector<float>& x_d,
 	if( i%2==0 )
 		thrust::copy(xnew_d.begin(), xnew_d.end(), x_d.begin());
 
-	return error;
+	return IterationStats(error, i+1);
 
 }

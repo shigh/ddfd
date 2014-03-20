@@ -15,10 +15,9 @@ int main(void)
 {
 	int max_iter = 5000;
 	float tol = 0.0001;
-	float error;
 
-	int nx = 1000;
-	int ny = 1000;
+	int nx = 100;
+	int ny = 100;
 	float dx = 2*M_PI/(nx-1.);
 	float dy = 2*M_PI/(ny-1.);
 
@@ -37,12 +36,16 @@ int main(void)
 	thrust::copy(x.begin(), x.end(), x_d.begin());
 	thrust::copy(b.begin(), b.end(), b_d.begin());
 
-	error = jacobi_solve_2d(x_d, b_d, ny, dy, nx, dx, max_iter, tol);
+	IterationStats error = jacobi_solve_2d(x_d, b_d,
+										   ny, dy, nx, dx,
+										   max_iter, tol);
    
 	// Copy from GPU
 	thrust::copy(x_d.begin(), x_d.end(), x.begin());
 
 	std::cout << "tol: "   << tol << " "
-			  << "error: " << error << std::endl;
-  
+			  << "error: " << error.error << " "
+			  << "Iterations: " << error.n_iterations
+			  << std::endl;
+
 }

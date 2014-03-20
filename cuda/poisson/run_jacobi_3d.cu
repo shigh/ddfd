@@ -15,7 +15,7 @@ int main(void)
 {
 	int max_iter = 5000;
 	float tol = 0.0001;
-	float error;
+
 
 	int nx = 100;
 	int ny = 100;
@@ -35,12 +35,12 @@ int main(void)
 	for(int k=0; k<nz; k++)
 		for(int i=0; i<ny; i++)
 			for(int j=0; j<nx; j++)
-				b[i+j*nx+k*nx*ny] = sin(j*dx)*sin(i*dy)*sin(dz);
+				b[i+j*nx+k*nx*ny] = sin(j*dx)*sin(i*dy)*sin(k*dz);
 
 	thrust::copy(x.begin(), x.end(), x_d.begin());
 	thrust::copy(b.begin(), b.end(), b_d.begin());
 
-	error = jacobi_solve_3d(x_d, b_d,
+	IterationStats error = jacobi_solve_3d(x_d, b_d,
 							nz, dz, ny, dy, nx, dx,
 							max_iter, tol);
    
@@ -48,6 +48,8 @@ int main(void)
 	thrust::copy(x_d.begin(), x_d.end(), x.begin());
 
 	std::cout << "tol: "   << tol << " "
-			  << "error: " << error << std::endl;
-  
+			  << "error: " << error.error << " "
+			  << "Iterations: " << error.n_iterations
+			  << std::endl;
+
 }
