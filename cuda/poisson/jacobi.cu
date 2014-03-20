@@ -177,7 +177,7 @@ void call_jacobi_step_3d(thrust::device_vector<float>& x_d,
 {
 
 	dim3 dB(32, 32);
-	dim3 dT(16, 16, 1);
+	dim3 dT(8, 8, 8);
 
 	//call Jacobi step
 	jacobi_3d<<<dB, dT>>>(thrust::raw_pointer_cast(&x_d[0]),

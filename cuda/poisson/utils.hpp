@@ -4,6 +4,8 @@
 
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
+#include <fstream>
+#include <cstddef>
 
 struct IterationStats
 {
@@ -25,5 +27,17 @@ float two_norm(thrust::device_vector<float>& a,
 void copy_boundaries(thrust::device_vector<float>& A,
 					 thrust::device_vector<float>& B,
 					 int ny, int nx);
+
+template<class T>
+void save_vector(const T& vec, const std::string& file, const char sep=' ')
+{
+
+	std::ofstream ofile(file.c_str());
+	for(size_t i = 0; i<vec.size(); i++)
+		ofile << vec[i] << sep;
+	ofile << std::endl;
+	ofile.close();
+
+}
 
 #endif

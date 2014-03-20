@@ -1,5 +1,5 @@
 
-CC=nvcc
+CC=nvcc -g -G
 OBJS = jacobi.o utils.o
 RUN_OBJS = run_jacobi_2d.o run_jacobi_3d.o
 TEST_OBJS = 
