@@ -4,30 +4,29 @@
 #include <cusp/krylov/cg.h>
 
 
-void build_sparse_3d_poisson(cusp::csr_matrix<int, float, cusp::device_memory>& A_out,
-							 const int nz, const float dz,
-							 const int ny, const float dy,
-							 const int nx, const float dx)
+template<typename IndexType, typename ValueType, class SparseMatrix>
+void build_sparse_3d_poisson(SparseMatrix& A_out,
+							 const IndexType nz, const ValueType dz,
+							 const IndexType ny, const ValueType dy,
+							 const IndexType nx, const ValueType dx)
 {
-    // initialize matrix entries on host
-	std::cout << "Starting to build" << std::endl;
-	// allocate storage for (4,3) matrix with 6 nonzeros
-	const int N = nx*ny*nz;
-	const int boundary_count = 2*(nx*ny+nx*nz+ny*nz)-4*(nx+ny+nz)+8;
-	const int interior_count = (nx-2)*(ny-2)*(nz-2);
-	const int nonzero_count  = 1*boundary_count + 7*interior_count;
-    cusp::coo_matrix<int, float, cusp::host_memory> A(N, N, nonzero_count);
 
-	int m;
-	int ind=0; // Running index of coo_matrix
-	const float idx2 = 1/(dx*dx);
-	const float idy2 = 1/(dy*dy);
-	const float idz2 = 1/(dz*dz);
-	const float af   = -2*(idx2 + idy2 + idz2);
+	const IndexType N = nx*ny*nz;
+	const IndexType boundary_count = 2*(nx*ny+nx*nz+ny*nz)-4*(nx+ny+nz)+8;
+	const IndexType interior_count = (nx-2)*(ny-2)*(nz-2);
+	const IndexType nonzero_count  = 1*boundary_count + 7*interior_count;
+    cusp::coo_matrix<IndexType, ValueType, cusp::host_memory> A(N, N, nonzero_count);
 
-	for(int k=0; k<nz; k++)
-		for(int j=0; j<ny; j++)
-			for(int i=0; i<nx; i++)
+	IndexType m;
+	IndexType ind=0; // Running index of coo_matrix
+	const ValueType idx2 = 1/(dx*dx);
+	const ValueType idy2 = 1/(dy*dy);
+	const ValueType idz2 = 1/(dz*dz);
+	const ValueType af   = -2*(idx2 + idy2 + idz2);
+
+	for(IndexType k=0; k<nz; k++)
+		for(IndexType j=0; j<ny; j++)
+			for(IndexType i=0; i<nx; i++)
 			{
 				m = i + j*nx + k*nx*ny;
 				if(i>0 && i<(nx-1) &&
@@ -73,8 +72,7 @@ void build_sparse_3d_poisson(cusp::csr_matrix<int, float, cusp::device_memory>& 
 				ind++;
 			}
 
-	std::cout << "Convert/transfer" << std::endl;
-	A_out = cusp::csr_matrix<int, float, cusp::device_memory>(A);
+	A_out = SparseMatrix(A);
 
 }
 							 
@@ -88,12 +86,13 @@ int main(void)
 	dx = dy = dz = .1;
 
 	cusp::csr_matrix<int, float, cusp::device_memory> A;
-	build_sparse_3d_poisson(A, nz, dz, ny, dy, nx, dx);
+	build_sparse_3d_poisson<int, float>(A, nz, dz, ny, dy, nx, dx);
 
 	cusp::array1d<float, cusp::device_memory> b(A.num_rows, 1);
 	cusp::array1d<float, cusp::device_memory> x(A.num_rows, 0);
-
-	cusp::krylov::cg(A, x, b);	
+	
+	cusp::verbose_monitor<float> monitor(b, 100, 1e-3);
+	cusp::krylov::cg(A, x, b, monitor);	
 
 
     return 0;
