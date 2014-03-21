@@ -126,7 +126,7 @@ void jacobi_3d(float *x_d, float *xnew_d, float *b_d,
 	int y0 = y;
 	int tid, north, south, east, west, top, bottom;
 
-	float k  =(dx*dx*dy*dy*dz*dz)/(dx*dx + dy*dy + dz*dz);
+	float k  = (dx*dx*dy*dy*dz*dz)/(dx*dx*dy*dy + dy*dy*dz*dz + dz*dz*dx*dx);
 	float kx = k/(dx*dx);
 	float ky = k/(dy*dy);
 	float kz = k/(dz*dz);
@@ -146,7 +146,7 @@ void jacobi_3d(float *x_d, float *xnew_d, float *b_d,
 				top    = tid + nx*ny;
 				bottom = tid - nx*ny;
 
-				if( x>0 && x<nx-1 && y>0 && y<ny-1 && z>0 && z<nz-1)
+				if( x>0 && x<(nx-1) && y>0 && y<(ny-1) && z>0 && z<(nz-1))
 					xnew_d[tid] = (k*b_d[tid] -
 								   ky*(x_d[north] + x_d[south]) -
 								   kx*(x_d[west]  + x_d[east])  -
