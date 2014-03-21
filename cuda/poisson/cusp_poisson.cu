@@ -1,16 +1,16 @@
 #include <cusp/coo_matrix.h>
-#include <cusp/ell_matrix.h>
+#include <cusp/csr_matrix.h>
 #include <cusp/print.h>
+#include <cusp/krylov/cg.h>
 
-int main(void)
+
+void build_sparse_3d_poisson(cusp::csr_matrix<int, float, cusp::device_memory>& A_out,
+							 const int nz, const float dz,
+							 const int ny, const float dy,
+							 const int nx, const float dx)
 {
-
     // initialize matrix entries on host
-	int nx, ny, nz;
-	nx = ny = nz = 4;
-	float dx, dy, dz;
-	dx = dy = dz = .1;
-
+	std::cout << "Starting to build" << std::endl;
 	// allocate storage for (4,3) matrix with 6 nonzeros
 	const int N = nx*ny*nz;
 	const int boundary_count = 2*(nx*ny+nx*nz+ny*nz)-4*(nx+ny+nz)+8;
@@ -20,7 +20,6 @@ int main(void)
 
 	int m;
 	int ind=0; // Running index of coo_matrix
-	//int bc=0, ic=0;
 	const float idx2 = 1/(dx*dx);
 	const float idy2 = 1/(dy*dy);
 	const float idz2 = 1/(dz*dz);
@@ -63,25 +62,39 @@ int main(void)
 					A.column_indices[ind] = m+nx*ny;
 					A.values[ind]         = idz2;
 					
-					//ic++;
 				}
 				else
 				{
 					A.row_indices[ind]    = m;
 					A.column_indices[ind] = m;
 					A.values[ind]         = 1;
-					//bc++;
 				}
 
 				ind++;
 			}
 
-	//std::cout << ic << ' ' << interior_count << std::endl;
-	//std::cout << bc << ' ' << boundary_count << std::endl;
-    // print matrix entries
-    //cusp::print(A);
+	std::cout << "Convert/transfer" << std::endl;
+	A_out = cusp::csr_matrix<int, float, cusp::device_memory>(A);
 
-	cusp::ell_matrix<int, float, cusp::device_memory> B(A);
+}
+							 
+
+int main(void)
+{
+
+	int nx, ny, nz;
+	nx = ny = nz = 100;
+	float dx, dy, dz;
+	dx = dy = dz = .1;
+
+	cusp::csr_matrix<int, float, cusp::device_memory> A;
+	build_sparse_3d_poisson(A, nz, dz, ny, dy, nx, dx);
+
+	cusp::array1d<float, cusp::device_memory> b(A.num_rows, 1);
+	cusp::array1d<float, cusp::device_memory> x(A.num_rows, 0);
+
+	cusp::krylov::cg(A, x, b);	
+
 
     return 0;
 }
