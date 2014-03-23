@@ -3,3 +3,4 @@ run_jacobi
 run_jacobi_2d
 run_jacobi_3d
 cusp_poisson
+run_cusp_3d
