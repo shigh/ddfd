@@ -1,3 +1,8 @@
+
+#ifndef __CUSP_POISSON_H
+#define __CUSP_POISSON_H
+
+
 #include <math.h>
 #include <cusp/coo_matrix.h>
 #include <cusp/csr_matrix.h>
@@ -79,3 +84,4 @@ void build_sparse_3d_poisson(SparseMatrix& A_out,
 							 
 
 
+#endif
