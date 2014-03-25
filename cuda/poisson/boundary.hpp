@@ -26,6 +26,9 @@ class BoundarySet
 
 public:
 
+	// These vector defs should be protected
+	// I am keeping them public to simplify dev
+	// Do not use them in calling code!!!
 	Vector north;
 	Vector south;
 	Vector west;
@@ -56,6 +59,39 @@ public:
 		thrust::copy(from.bottom.begin(), from.bottom.end(), bottom.begin());
 				
 	}
+
+	// Get raw pointers for use as MPI comm buffers
+	
+	T* get_north_ptr()
+	{
+		return thrust::raw_pointer_cast(&north[0]);
+	}
+
+	T* get_south_ptr()
+	{
+		return thrust::raw_pointer_cast(&south[0]);
+	}
+
+	T* get_west_ptr()
+	{
+		return thrust::raw_pointer_cast(&west[0]);
+	}
+
+	T* get_east_ptr()
+	{
+		return thrust::raw_pointer_cast(&east[0]);
+	}
+
+	T* get_top_ptr()
+	{
+		return thrust::raw_pointer_cast(&top[0]);
+	}
+
+	T* get_bottom_ptr()
+	{
+		return thrust::raw_pointer_cast(&bottom[0]);
+	}
+
 };
 
 template<typename T>

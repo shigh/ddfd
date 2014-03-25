@@ -24,5 +24,19 @@ int main(void)
 	hbs.copy(dbs);
 	dbs.copy(hbs);
 
+	float* northh  = hbs.get_north_ptr();
+	float* southh  = hbs.get_south_ptr();
+	float* westh   = hbs.get_west_ptr();
+	float* easth   = hbs.get_east_ptr();
+	float* toph    = hbs.get_top_ptr();
+	float* bottomh = hbs.get_bottom_ptr();
+
+	float* northd  = dbs.get_north_ptr();
+	float* southd  = dbs.get_south_ptr();
+	float* westd   = dbs.get_west_ptr();
+	float* eastd   = dbs.get_east_ptr();
+	float* topd    = dbs.get_top_ptr();
+	float* bottomd = dbs.get_bottom_ptr();
+	
 	return 0;
 }
