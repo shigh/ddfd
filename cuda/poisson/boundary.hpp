@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
+#include <thrust/copy.h>
 
 enum Boundary
 {
@@ -23,7 +24,7 @@ template<typename T, class Vector>
 class BoundarySet
 {
 
-private:
+public:
 
 	Vector north;
 	Vector south;
@@ -32,7 +33,6 @@ private:
 	Vector top;
 	Vector bottom;
 
-public:
 
 	const size_t nz;
 	const size_t ny;
@@ -40,14 +40,26 @@ public:
 
 	BoundarySet(size_t nz_, size_t ny_, size_t nx_):
 		nz(nz_), ny(ny_), nx(nx_),
-		north(nz*nx, 0), south(nz*nx, 0),
-		west(nz*ny, 0),  east(nz*ny, 0),
-		top(ny*nx, 0),   bottom(ny*nx, 0) {;}
+		north(nz_*nx_, 0), south(nz_*nx_, 0),
+		west(nz_*ny_, 0),  east(nz_*ny_, 0),
+		top(ny_*nx_, 0),   bottom(ny_*nx_, 0) {;}
 
+	template<class FromBoundarySet>
+	void copy(FromBoundarySet& from)
+	{
+
+		thrust::copy(from.north.begin(),  from.north.end(),  north.begin());
+		thrust::copy(from.south.begin(),  from.south.end(),  south.begin());
+		thrust::copy(from.west.begin(),   from.west.end(),   west.begin());
+		thrust::copy(from.east.begin(),   from.east.end(),   east.begin());
+		thrust::copy(from.top.begin(),    from.top.end(),    top.begin());
+		thrust::copy(from.bottom.begin(), from.bottom.end(), bottom.begin());
+				
+	}
 };
 
 template<typename T>
-class HostBoundarySet: BoundarySet<T, thrust::host_vector<T> >
+class HostBoundarySet: public BoundarySet<T, thrust::host_vector<T> >
 {
 
 private:
@@ -56,21 +68,21 @@ private:
 
 public:
 	
-	HostBoundarySet(size_t N): Parent(N) {;}
+	HostBoundarySet(size_t nz_, size_t ny_, size_t nx_): Parent(nz_,ny_,nx_) {;}
 
 };
 
 template<typename T>
-class DeviceBoundarySet: BoundarySet<T, thrust::device_vector<T> >
+class DeviceBoundarySet: public BoundarySet<T, thrust::device_vector<T> >
 {
 
 private:
 
-	typedef BoundarySet<T, thrust::host_vector<T> > Parent;
+	typedef BoundarySet<T, thrust::device_vector<T> > Parent;
 
 public:
 	
-	DeviceBoundarySet(size_t N): Parent(N) {;}
+	DeviceBoundarySet(size_t nz_, size_t ny_, size_t nx_): Parent(nz_,ny_,nx_) {;}
 
 };
 
