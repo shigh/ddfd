@@ -6,3 +6,4 @@ cusp_poisson
 run_cusp_3d
 tinker
 tmp
+run_cusp_solver
