@@ -47,14 +47,20 @@ __global__ void extract_west_kernel(T* from, T* to,
 
 	int y = threadIdx.x + blockIdx.x*blockDim.x;
 	int z = threadIdx.y + blockIdx.y*blockDim.y;
+	int y_stride = blockDim.x;
+	int z_stride = blockDim.y;
 	int y0 = y;
 
 	while(z < nz)
 	{
 
 		while(y < ny)
+		{
 			to[y + z*ny] = from[y*nx + z*nx*ny];
+			y += y_stride;
+		}
 
+		z += z_stride;
 		y = y0;
 	}
 
@@ -78,14 +84,20 @@ __global__ void extract_east_kernel(T* from, T* to,
 
 	int y = threadIdx.x + blockIdx.x*blockDim.x;
 	int z = threadIdx.y + blockIdx.y*blockDim.y;
+	int y_stride = blockDim.x;
+	int z_stride = blockDim.y;
 	int y0 = y;
 
 	while(z < nz)
 	{
 
 		while(y < ny)
+		{
 			to[y + z*ny] = from[(nx-1) + y*nx + z*nx*ny];
+			y += y_stride;
+		}
 
+		z += z_stride;
 		y = y0;
 	}
 
@@ -111,15 +123,21 @@ __global__ void extract_north_kernel(T* from, T* to,
 
 	int x = threadIdx.x + blockIdx.x*blockDim.x;
 	int z = threadIdx.y + blockIdx.y*blockDim.y;
-	int y0 = y;
+	int x_stride = blockDim.x;
+	int z_stride = blockDim.y;
+	int x0 = x;
 
 	while(z < nz)
 	{
 
 		while(x < nx)
+		{
 			to[x + z*nx] = from[(ny-1)*nx + x + z*nx*ny];
+			x += x_stride;
+		}
 
-		y = y0;
+		z += z_stride;
+		x = x0;
 	}
 
 }
@@ -144,15 +162,21 @@ __global__ void extract_south_kernel(T* from, T* to,
 
 	int x = threadIdx.x + blockIdx.x*blockDim.x;
 	int z = threadIdx.y + blockIdx.y*blockDim.y;
-	int y0 = y;
+	int x_stride = blockDim.x;
+	int z_stride = blockDim.y;
+	int x0 = x;
 
 	while(z < nz)
 	{
 
 		while(x < nx)
+		{
 			to[x + z*nx] = from[x + z*nx*ny];
+			x += x_stride;
+		}
 
-		y = y0;
+		z += z_stride;
+		x = x0;
 	}
 
 }
