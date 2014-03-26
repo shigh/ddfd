@@ -37,6 +37,7 @@ int main(void)
 	float* eastd   = dbs.get_east_ptr();
 	float* topd    = dbs.get_top_ptr();
 	float* bottomd = dbs.get_bottom_ptr();
-	
+
+
 	return 0;
 }
