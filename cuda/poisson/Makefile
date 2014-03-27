@@ -8,15 +8,15 @@ TEST_OBJS =
 
 CPPFLAGS+=$(CUSP)
 
-all : run_jacobi_2d run_jacobi_3d run_cusp_3d run_cusp_solver
+all : $(OBJS) #run_jacobi_2d run_jacobi_3d run_cusp_3d run_cusp_solver
 
 # test: test_jacb
 # 	./test_jacb
 
-run_jacobi_2d : $(OBJS)
-run_jacobi_3d : $(OBJS)
-run_cusp_3d   : $(OBJS)
-run_cusp_solver : $(OBJS)
+# run_jacobi_2d : $(OBJS)
+# run_jacobi_3d : $(OBJS)
+# run_cusp_3d   : $(OBJS)
+# run_cusp_solver : $(OBJS)
 tinker : $(OBJS)
 
 $(OBJS) $(RUN_OBJS) $(TEST_OBJS) : %.o : %.cu
