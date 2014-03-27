@@ -9,9 +9,11 @@
 #include <cusp/print.h>
 #include <cusp/krylov/cg.h>
 #include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
 #include "cusp_poisson.hpp"
 #include "solvers.hpp"
 #include "boundary.hpp"
+#include "test_utils.hpp"
 
 BOOST_AUTO_TEST_SUITE( boundary_set_tests )
 
@@ -25,13 +27,16 @@ BOOST_AUTO_TEST_CASE( host_constructor )
 
 }
 
+
 BOOST_AUTO_TEST_CASE( device_constructor )
 {
 
 	int nx, ny, nz;
 	nx = ny = nz = 100;
 	DeviceBoundarySet<float> hbs(nz, ny, nx);
+
 }
+
 
 BOOST_AUTO_TEST_CASE( host_get_ptr_not_null )
 {
@@ -53,6 +58,7 @@ BOOST_AUTO_TEST_CASE( host_get_ptr_not_null )
 				 top!=NULL   && bottom!=NULL );
 
 }
+
 
 BOOST_AUTO_TEST_CASE( device_get_ptr_not_null )
 {
@@ -76,6 +82,42 @@ BOOST_AUTO_TEST_CASE( device_get_ptr_not_null )
 }
 
 
+BOOST_AUTO_TEST_CASE( device_call_kernel_on_ptrs )
+{
+
+	int nx, ny, nz;
+	nx = ny = nz = 10;
+	int N = nx*ny; // Same for each boundary
+
+	DeviceBoundarySet<float> dbs(nz, ny, nx);
+
+	float* a = dbs.get_north_ptr();
+	set_to_one<float><<<1, 8>>>(a, N);
+	BOOST_CHECK_EQUAL( cudaSuccess, cudaGetLastError() );
+
+	a = dbs.get_south_ptr();
+	set_to_one<float><<<1, 8>>>(a, N);
+	BOOST_CHECK_EQUAL( cudaSuccess, cudaGetLastError() );
+
+	a = dbs.get_west_ptr();
+	set_to_one<float><<<1, 8>>>(a, N);
+	BOOST_CHECK_EQUAL( cudaSuccess, cudaGetLastError() );
+
+	a = dbs.get_east_ptr();
+	set_to_one<float><<<1, 8>>>(a, N);
+	BOOST_CHECK_EQUAL( cudaSuccess, cudaGetLastError() );
+
+	a = dbs.get_top_ptr();
+	set_to_one<float><<<1, 8>>>(a, N);
+	BOOST_CHECK_EQUAL( cudaSuccess, cudaGetLastError() );
+
+	a = dbs.get_bottom_ptr();
+	set_to_one<float><<<1, 8>>>(a, N);
+	BOOST_CHECK_EQUAL( cudaSuccess, cudaGetLastError() );
+	
+}
+
+
 BOOST_AUTO_TEST_CASE( copy_host_to_device )
 {
 
@@ -94,6 +136,42 @@ BOOST_AUTO_TEST_CASE( copy_host_to_device )
 	std::fill_n(hbs.get_bottom_ptr(), N, 6);
 
 	dbs.copy(hbs);
+
+	BOOST_CHECK( all_equal_device<float>(dbs.get_north_ptr(),  N, 1) );
+	BOOST_CHECK( all_equal_device<float>(dbs.get_south_ptr(),  N, 2) );
+	BOOST_CHECK( all_equal_device<float>(dbs.get_west_ptr(),   N, 3) );
+	BOOST_CHECK( all_equal_device<float>(dbs.get_east_ptr(),   N, 4) );
+	BOOST_CHECK( all_equal_device<float>(dbs.get_top_ptr(),    N, 5) );
+	BOOST_CHECK( all_equal_device<float>(dbs.get_bottom_ptr(), N, 6) );
+
+}
+
+
+BOOST_AUTO_TEST_CASE( copy_device_to_host )
+{
+
+	int nx, ny, nz;
+	nx = ny = nz = 10;
+	int N = nx*ny; // Same size for all boundaries
+
+	HostBoundarySet<float>   hbs(nz, ny, nx);
+	DeviceBoundarySet<float> dbs(nz, ny, nx);
+
+	set_to_constant<float><<<1, 16>>>(dbs.get_north_ptr(),  N, 1);
+	set_to_constant<float><<<1, 16>>>(dbs.get_south_ptr(),  N, 2);
+	set_to_constant<float><<<1, 16>>>(dbs.get_west_ptr(),   N, 3);
+	set_to_constant<float><<<1, 16>>>(dbs.get_east_ptr(),   N, 4);
+	set_to_constant<float><<<1, 16>>>(dbs.get_top_ptr(),    N, 5);
+	set_to_constant<float><<<1, 16>>>(dbs.get_bottom_ptr(), N, 6);
+
+	hbs.copy(dbs);
+
+	BOOST_CHECK( all_equal_host<float>(hbs.get_north_ptr(),  N, 1) );
+	BOOST_CHECK( all_equal_host<float>(hbs.get_south_ptr(),  N, 2) );
+	BOOST_CHECK( all_equal_host<float>(hbs.get_west_ptr(),   N, 3) );
+	BOOST_CHECK( all_equal_host<float>(hbs.get_east_ptr(),   N, 4) );
+	BOOST_CHECK( all_equal_host<float>(hbs.get_top_ptr(),    N, 5) );
+	BOOST_CHECK( all_equal_host<float>(hbs.get_bottom_ptr(), N, 6) );
 
 }
 
