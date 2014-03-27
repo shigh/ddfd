@@ -16,9 +16,9 @@ BOOST_AUTO_TEST_SUITE( cusp_3d_tests )
 BOOST_AUTO_TEST_CASE( build_sparse_completes )
 {
 
-	int nx = 50;
-	int ny = 100;
-	int nz = 150;
+	int nx = 5;
+	int ny = 10;
+	int nz = 15;
 
 	float dx, dy, dz;
 	dx = dy = dz = 1;

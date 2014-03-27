@@ -8,14 +8,18 @@ LDLIBS  += -lboost_unit_test_framework
 
 OBJS = tests.o test_cusp_3d.o test_solver_cusp.o test_boundary_set.o
 
+.PHONY: all test clean
+
 all: tests
+
+test: tests
+	./tests --log_level=test_suite
 
 tests: $(OBJS)
 	$(CC) $(LDLIBS) -o $@ $^
 
 $(OBJS) : %.o : %.cu
 	$(CC) $(CPPFLAGS) -c -o $@ $<
-
 
 clean:
 	rm -vf nul *.o tests

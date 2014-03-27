@@ -17,9 +17,9 @@ BOOST_AUTO_TEST_SUITE( solver_cusp_3d_tests )
 BOOST_AUTO_TEST_CASE( solver_cusp_constructor )
 {
 
-	int nx = 50;
-	int ny = 100;
-	int nz = 150;
+	int nx = 5;
+	int ny = 10;
+	int nz = 15;
 
 	float dx, dy, dz;
 	dx = dy = dz = 1;
@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE( solver_cusp_constructor )
 BOOST_AUTO_TEST_CASE( solver_cusp_solver_completes )
 {
 	int nx, ny, nz;
-	nx = ny = nz = 100;
+	nx = ny = nz = 10;
 
 	float dx = 2*M_PI/(nx-1.);
 	float dy = 2*M_PI/(ny-1.);
