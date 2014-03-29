@@ -9,6 +9,7 @@
 #include <thrust/host_vector.h>
 #include <thrust/copy.h>
 
+
 enum Boundary
 {
     North  = 1u << 0,
@@ -30,8 +31,30 @@ void extract_top(T* from_d, T* to_d,
 
 }
 
+
+template<typename T>
+void set_top(T* from_d, T* to_d,
+			 size_t nz, size_t ny, size_t nx)
+{
+
+	cudaMemcpy(&to_d[(nz-1)*nx*ny], from_d,
+			   nx*ny*sizeof(T), cudaMemcpyDeviceToDevice);
+
+}
+
+
 template<typename T>
 void extract_bottom(T* from_d, T* to_d,
+					size_t nz, size_t ny, size_t nx)
+{
+
+	cudaMemcpy(to_d, from_d, nx*ny*sizeof(T), cudaMemcpyDeviceToDevice);
+
+}
+
+
+template<typename T>
+void set_bottom(T* from_d, T* to_d,
 					size_t nz, size_t ny, size_t nx)
 {
 
@@ -66,6 +89,34 @@ __global__ void extract_west_kernel(T* from, T* to,
 
 }
 
+
+template<typename T>
+__global__ void set_west_kernel(T* from, T* to,
+								size_t nz, size_t ny, size_t nx)
+{
+
+	int y = threadIdx.x + blockIdx.x*blockDim.x;
+	int z = threadIdx.y + blockIdx.y*blockDim.y;
+	int y_stride = blockDim.x;
+	int z_stride = blockDim.y;
+	int y0 = y;
+
+	while(z < nz)
+	{
+
+		while(y < ny)
+		{
+			to[y*nx + z*nx*ny] = from[y + z*ny];
+			y += y_stride;
+		}
+
+		z += z_stride;
+		y = y0;
+	}
+
+}
+
+
 template<typename T>
 void extract_west(T* from, T* to,
 				  size_t nz, size_t ny, size_t nx)
@@ -76,6 +127,19 @@ void extract_west(T* from, T* to,
 	extract_west_kernel<<<blocks, threads>>>(from, to, nz, ny, nx);
 
 }
+
+
+template<typename T>
+void set_west(T* from, T* to,
+			  size_t nz, size_t ny, size_t nx)
+{
+
+	dim3 blocks(32, 32);
+	dim3 threads(16, 16, 1);
+	set_west_kernel<<<blocks, threads>>>(from, to, nz, ny, nx);
+
+}
+
 
 template<typename T>
 __global__ void extract_east_kernel(T* from, T* to,
@@ -105,6 +169,33 @@ __global__ void extract_east_kernel(T* from, T* to,
 
 
 template<typename T>
+__global__ void set_east_kernel(T* from, T* to,
+								size_t nz, size_t ny, size_t nx)
+{
+
+	int y = threadIdx.x + blockIdx.x*blockDim.x;
+	int z = threadIdx.y + blockIdx.y*blockDim.y;
+	int y_stride = blockDim.x;
+	int z_stride = blockDim.y;
+	int y0 = y;
+
+	while(z < nz)
+	{
+
+		while(y < ny)
+		{
+			to[(nx-1) + y*nx + z*nx*ny] = from[y + z*ny];
+			y += y_stride;
+		}
+
+		z += z_stride;
+		y = y0;
+	}
+
+}
+
+
+template<typename T>
 void extract_east(T* from, T* to,
 				  size_t nz, size_t ny, size_t nx)
 {
@@ -112,6 +203,18 @@ void extract_east(T* from, T* to,
 	dim3 blocks(32, 32);
 	dim3 threads(16, 16, 1);
 	extract_east_kernel<<<blocks, threads>>>(from, to, nz, ny, nx);
+
+}
+
+
+template<typename T>
+void set_east(T* from, T* to,
+			  size_t nz, size_t ny, size_t nx)
+{
+
+	dim3 blocks(32, 32);
+	dim3 threads(16, 16, 1);
+	set_east_kernel<<<blocks, threads>>>(from, to, nz, ny, nx);
 
 }
 
@@ -142,6 +245,34 @@ __global__ void extract_north_kernel(T* from, T* to,
 
 }
 
+
+template<typename T>
+__global__ void set_north_kernel(T* from, T* to,
+								 size_t nz, size_t ny, size_t nx)
+{
+
+	int x = threadIdx.x + blockIdx.x*blockDim.x;
+	int z = threadIdx.y + blockIdx.y*blockDim.y;
+	int x_stride = blockDim.x;
+	int z_stride = blockDim.y;
+	int x0 = x;
+
+	while(z < nz)
+	{
+
+		while(x < nx)
+		{
+			to[(ny-1)*nx + x + z*nx*ny] = from[x + z*nx];
+			x += x_stride;
+		}
+
+		z += z_stride;
+		x = x0;
+	}
+
+}
+
+
 template<typename T>
 void extract_north(T* from, T* to,
 				   size_t nz, size_t ny, size_t nx)
@@ -153,6 +284,17 @@ void extract_north(T* from, T* to,
 
 }
 
+
+template<typename T>
+void set_north(T* from, T* to,
+			   size_t nz, size_t ny, size_t nx)
+{
+
+	dim3 blocks(32, 32);
+	dim3 threads(16, 16, 1);
+	set_north_kernel<<<blocks, threads>>>(from, to, nz, ny, nx);
+
+}
 
 
 template<typename T>
@@ -181,6 +323,34 @@ __global__ void extract_south_kernel(T* from, T* to,
 
 }
 
+
+template<typename T>
+__global__ void set_south_kernel(T* from, T* to,
+								 size_t nz, size_t ny, size_t nx)
+{
+
+	int x = threadIdx.x + blockIdx.x*blockDim.x;
+	int z = threadIdx.y + blockIdx.y*blockDim.y;
+	int x_stride = blockDim.x;
+	int z_stride = blockDim.y;
+	int x0 = x;
+
+	while(z < nz)
+	{
+
+		while(x < nx)
+		{
+			to[x + z*nx*ny] = from[x + z*nx];
+			x += x_stride;
+		}
+
+		z += z_stride;
+		x = x0;
+	}
+
+}
+
+
 template<typename T>
 void extract_south(T* from, T* to,
 				   size_t nz, size_t ny, size_t nx)
@@ -192,6 +362,17 @@ void extract_south(T* from, T* to,
 
 }
 
+
+template<typename T>
+void set_south(T* from, T* to,
+			   size_t nz, size_t ny, size_t nx)
+{
+
+	dim3 blocks(32, 32);
+	dim3 threads(16, 16, 1);
+	set_south_kernel<<<blocks, threads>>>(from, to, nz, ny, nx);
+
+}
 
 
 template<typename T, class Vector>
@@ -268,6 +449,7 @@ public:
 
 };
 
+
 template<typename T>
 class HostBoundarySet: public BoundarySet<T, thrust::host_vector<T> >
 {
@@ -282,6 +464,7 @@ public:
 
 };
 
+
 template<typename T>
 class DeviceBoundarySet: public BoundarySet<T, thrust::device_vector<T> >
 {
@@ -295,5 +478,6 @@ public:
 	DeviceBoundarySet(size_t nz_, size_t ny_, size_t nx_): Parent(nz_,ny_,nx_) {;}
 
 };
+
 
 #endif

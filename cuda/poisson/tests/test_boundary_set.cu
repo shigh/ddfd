@@ -88,6 +88,81 @@ struct ExtractBdyFixture
 };
 
 
+template<typename T>
+class SetBdyFixture
+{
+
+public:
+
+	thrust::device_vector<T> mat_d;
+	thrust::device_vector<T> one_d;
+	thrust::device_vector<T> ext_d;
+
+	const int nz;
+	const int ny;
+	const int nx;
+
+	SetBdyFixture(int nz_, int ny_, int nx_):
+		nz(nz_), ny(ny_), nx(nx_) {;}
+
+	T* get_mat_d_ptr()
+	{
+		return thrust::raw_pointer_cast(&mat_d[0]);
+	}
+
+	T* get_one_d_ptr()
+	{
+		return thrust::raw_pointer_cast(&one_d[0]);
+	}
+
+	T* get_ext_d_ptr()
+	{
+		return thrust::raw_pointer_cast(&ext_d[0]);
+	}
+
+
+	// Check that one_d==ext_d
+	bool equiv()
+	{
+
+		return thrust::equal(one_d.begin(), one_d.end(),
+							 ext_d.begin());
+
+	}
+
+	void rebuild(int N)
+	{
+		mat_d = thrust::device_vector<T>(nz*ny*nx, 0);
+		one_d = thrust::device_vector<T>(N, 1);
+		ext_d = thrust::device_vector<T>(N, 0);
+	}
+	
+	void reset(Boundary bnd)
+	{
+
+		switch( bnd )
+		{
+
+		case North:
+		case South:
+			rebuild(nx*nz);
+			break;
+		case West:
+		case East:
+			rebuild(ny*nz);
+			break;
+		case Top:
+		case Bottom:
+			rebuild(nx*ny);
+			break;
+
+		}
+
+	}
+
+};
+
+
 BOOST_AUTO_TEST_SUITE( boundary_set_tests )
 
 // Check for explosions
@@ -412,6 +487,224 @@ BOOST_AUTO_TEST_CASE( extract_bdy_large_nonsquare )
 							f.hbs.get_top_ptr()) );
 	BOOST_CHECK( std::equal(f.expected_b.begin(), f.expected_b.end(),
 							f.hbs.get_bottom_ptr()) );
+
+}
+
+
+BOOST_AUTO_TEST_CASE( set_bdy_small_square )
+{
+
+	const int nx = 3;
+	const int ny = nx;
+	const int nz = nx;
+
+	SetBdyFixture<float> f(nz, ny, nx);
+
+	f.reset(North);
+	set_north<float>(f.get_one_d_ptr(), f.get_mat_d_ptr(),
+					 nz, ny, nx);
+	extract_north<float>(f.get_mat_d_ptr(), f.get_ext_d_ptr(),
+						 nz, ny, nx);
+	BOOST_CHECK( f.equiv() );
+
+	f.reset(South);
+	set_south<float>(f.get_one_d_ptr(), f.get_mat_d_ptr(),
+					 nz, ny, nx);
+	extract_south<float>(f.get_mat_d_ptr(), f.get_ext_d_ptr(),
+						 nz, ny, nx);
+	BOOST_CHECK( f.equiv() );
+
+	f.reset(West);
+	set_west<float>(f.get_one_d_ptr(), f.get_mat_d_ptr(),
+					 nz, ny, nx);
+	extract_west<float>(f.get_mat_d_ptr(), f.get_ext_d_ptr(),
+						 nz, ny, nx);
+	BOOST_CHECK( f.equiv() );
+	
+	f.reset(East);
+	set_east<float>(f.get_one_d_ptr(), f.get_mat_d_ptr(),
+					 nz, ny, nx);
+	extract_east<float>(f.get_mat_d_ptr(), f.get_ext_d_ptr(),
+						 nz, ny, nx);
+	BOOST_CHECK( f.equiv() );
+
+	f.reset(Top);
+	set_top<float>(f.get_one_d_ptr(), f.get_mat_d_ptr(),
+					 nz, ny, nx);
+	extract_top<float>(f.get_mat_d_ptr(), f.get_ext_d_ptr(),
+						 nz, ny, nx);
+	BOOST_CHECK( f.equiv() );
+
+	f.reset(Bottom);
+	set_bottom<float>(f.get_one_d_ptr(), f.get_mat_d_ptr(),
+					 nz, ny, nx);
+	extract_bottom<float>(f.get_mat_d_ptr(), f.get_ext_d_ptr(),
+						 nz, ny, nx);
+	BOOST_CHECK( f.equiv() );
+	
+}
+
+BOOST_AUTO_TEST_CASE( set_bdy_small_nonsquare )
+{
+
+	const int nx = 3;
+	const int ny = nx+1;
+	const int nz = ny+1;
+
+	SetBdyFixture<float> f(nz, ny, nx);
+
+	f.reset(North);
+	set_north<float>(f.get_one_d_ptr(), f.get_mat_d_ptr(),
+					 nz, ny, nx);
+	extract_north<float>(f.get_mat_d_ptr(), f.get_ext_d_ptr(),
+						 nz, ny, nx);
+	BOOST_CHECK( f.equiv() );
+
+	f.reset(South);
+	set_south<float>(f.get_one_d_ptr(), f.get_mat_d_ptr(),
+					 nz, ny, nx);
+	extract_south<float>(f.get_mat_d_ptr(), f.get_ext_d_ptr(),
+						 nz, ny, nx);
+	BOOST_CHECK( f.equiv() );
+
+	f.reset(West);
+	set_west<float>(f.get_one_d_ptr(), f.get_mat_d_ptr(),
+					 nz, ny, nx);
+	extract_west<float>(f.get_mat_d_ptr(), f.get_ext_d_ptr(),
+						 nz, ny, nx);
+	BOOST_CHECK( f.equiv() );
+	
+	f.reset(East);
+	set_east<float>(f.get_one_d_ptr(), f.get_mat_d_ptr(),
+					 nz, ny, nx);
+	extract_east<float>(f.get_mat_d_ptr(), f.get_ext_d_ptr(),
+						 nz, ny, nx);
+	BOOST_CHECK( f.equiv() );
+
+	f.reset(Top);
+	set_top<float>(f.get_one_d_ptr(), f.get_mat_d_ptr(),
+					 nz, ny, nx);
+	extract_top<float>(f.get_mat_d_ptr(), f.get_ext_d_ptr(),
+						 nz, ny, nx);
+	BOOST_CHECK( f.equiv() );
+
+	f.reset(Bottom);
+	set_bottom<float>(f.get_one_d_ptr(), f.get_mat_d_ptr(),
+					 nz, ny, nx);
+	extract_bottom<float>(f.get_mat_d_ptr(), f.get_ext_d_ptr(),
+						 nz, ny, nx);
+	BOOST_CHECK( f.equiv() );
+	
+
+}
+
+
+BOOST_AUTO_TEST_CASE( set_bdy_large_square )
+{
+
+	const int nx = 100;
+	const int ny = nx;
+	const int nz = nx;
+
+	SetBdyFixture<float> f(nz, ny, nx);
+
+	f.reset(North);
+	set_north<float>(f.get_one_d_ptr(), f.get_mat_d_ptr(),
+					 nz, ny, nx);
+	extract_north<float>(f.get_mat_d_ptr(), f.get_ext_d_ptr(),
+						 nz, ny, nx);
+	BOOST_CHECK( f.equiv() );
+
+	f.reset(South);
+	set_south<float>(f.get_one_d_ptr(), f.get_mat_d_ptr(),
+					 nz, ny, nx);
+	extract_south<float>(f.get_mat_d_ptr(), f.get_ext_d_ptr(),
+						 nz, ny, nx);
+	BOOST_CHECK( f.equiv() );
+
+	f.reset(West);
+	set_west<float>(f.get_one_d_ptr(), f.get_mat_d_ptr(),
+					 nz, ny, nx);
+	extract_west<float>(f.get_mat_d_ptr(), f.get_ext_d_ptr(),
+						 nz, ny, nx);
+	BOOST_CHECK( f.equiv() );
+	
+	f.reset(East);
+	set_east<float>(f.get_one_d_ptr(), f.get_mat_d_ptr(),
+					 nz, ny, nx);
+	extract_east<float>(f.get_mat_d_ptr(), f.get_ext_d_ptr(),
+						 nz, ny, nx);
+	BOOST_CHECK( f.equiv() );
+
+	f.reset(Top);
+	set_top<float>(f.get_one_d_ptr(), f.get_mat_d_ptr(),
+					 nz, ny, nx);
+	extract_top<float>(f.get_mat_d_ptr(), f.get_ext_d_ptr(),
+						 nz, ny, nx);
+	BOOST_CHECK( f.equiv() );
+
+	f.reset(Bottom);
+	set_bottom<float>(f.get_one_d_ptr(), f.get_mat_d_ptr(),
+					 nz, ny, nx);
+	extract_bottom<float>(f.get_mat_d_ptr(), f.get_ext_d_ptr(),
+						 nz, ny, nx);
+	BOOST_CHECK( f.equiv() );
+	
+
+}
+
+
+BOOST_AUTO_TEST_CASE( set_bdy_large_nonsquare )
+{
+
+	const int nx = 50;
+	const int ny = nx*2;
+	const int nz = ny*2;
+
+	SetBdyFixture<float> f(nz, ny, nx);
+
+	f.reset(North);
+	set_north<float>(f.get_one_d_ptr(), f.get_mat_d_ptr(),
+					 nz, ny, nx);
+	extract_north<float>(f.get_mat_d_ptr(), f.get_ext_d_ptr(),
+						 nz, ny, nx);
+	BOOST_CHECK( f.equiv() );
+
+	f.reset(South);
+	set_south<float>(f.get_one_d_ptr(), f.get_mat_d_ptr(),
+					 nz, ny, nx);
+	extract_south<float>(f.get_mat_d_ptr(), f.get_ext_d_ptr(),
+						 nz, ny, nx);
+	BOOST_CHECK( f.equiv() );
+
+	f.reset(West);
+	set_west<float>(f.get_one_d_ptr(), f.get_mat_d_ptr(),
+					 nz, ny, nx);
+	extract_west<float>(f.get_mat_d_ptr(), f.get_ext_d_ptr(),
+						 nz, ny, nx);
+	BOOST_CHECK( f.equiv() );
+	
+	f.reset(East);
+	set_east<float>(f.get_one_d_ptr(), f.get_mat_d_ptr(),
+					 nz, ny, nx);
+	extract_east<float>(f.get_mat_d_ptr(), f.get_ext_d_ptr(),
+						 nz, ny, nx);
+	BOOST_CHECK( f.equiv() );
+
+	f.reset(Top);
+	set_top<float>(f.get_one_d_ptr(), f.get_mat_d_ptr(),
+					 nz, ny, nx);
+	extract_top<float>(f.get_mat_d_ptr(), f.get_ext_d_ptr(),
+						 nz, ny, nx);
+	BOOST_CHECK( f.equiv() );
+
+	f.reset(Bottom);
+	set_bottom<float>(f.get_one_d_ptr(), f.get_mat_d_ptr(),
+					 nz, ny, nx);
+	extract_bottom<float>(f.get_mat_d_ptr(), f.get_ext_d_ptr(),
+						 nz, ny, nx);
+	BOOST_CHECK( f.equiv() );
+	
 
 }
 
