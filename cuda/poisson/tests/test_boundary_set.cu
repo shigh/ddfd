@@ -39,7 +39,7 @@ struct ExtractBdyFixture
 	HostBoundarySet<T>   hbs;
 
 
-	ExtractBdyFixture(int nz_, int ny_, int nx_):
+	ExtractBdyFixture(int nz_, int ny_, int nx_, int offset=0):
 		nz(nz_), ny(ny_), nx(nx_), N(nz_*ny_*nx_),
 		mat_h(nz_*ny_*nx_), mat_d(nz_*ny_*nx_),
 		dbs(nz_, ny_, nx_), hbs(nz_, ny_, nx_),
@@ -57,24 +57,24 @@ struct ExtractBdyFixture
 		for(int z=0; z<nz; z++)
 			for(int x=0; x<nx; x++)
 			{
-				expected_n[x+z*nx] = x + z*nx*ny + nx*(ny-1);
-				expected_s[x+z*nx] = x + z*nx*ny;
+				expected_n[x+z*nx] = x + z*nx*ny + nx*(ny-1) - offset*nx;
+				expected_s[x+z*nx] = x + z*nx*ny + offset*nx;
 			}
 
 		// West and east
 		for(int z=0; z<nz; z++)
 			for(int y=0; y<ny; y++)
 			{
-				expected_w[y+z*ny] = y*nx + z*nx*ny;
-				expected_e[y+z*ny] = y*nx + z*nx*ny + (nx-1);
+				expected_w[y+z*ny] = y*nx + z*nx*ny + offset;
+				expected_e[y+z*ny] = y*nx + z*nx*ny + (nx-1) - offset;
 			}
 		
 		// Top and bottom
 		for(int y=0; y<ny; y++)
 			for(int x=0; x<nx; x++)
 			{
-				expected_t[x+y*nx] = x + y*nx + nx*ny*(nz-1);
-				expected_b[x+y*nx] = x + y*nx;
+				expected_t[x+y*nx] = x + y*nx + nx*ny*(nz-1) - offset*nx*ny;
+				expected_b[x+y*nx] = x + y*nx + offset*nx*ny;
 			}
 		
 
@@ -705,6 +705,177 @@ BOOST_AUTO_TEST_CASE( set_bdy_large_nonsquare )
 						 nz, ny, nx);
 	BOOST_CHECK( f.equiv() );
 	
+
+}
+
+
+BOOST_AUTO_TEST_CASE( extract_bdy_small_square_off )
+{
+
+	const int nx = 3;
+	const int ny = nx;
+	const int nz = nx;
+	const int offset = 1;
+
+	ExtractBdyFixture<float> f(nz, ny, nx, offset);
+
+	extract_north<float>(f.get_mat_d_ptr(),
+						 f.dbs.get_north_ptr(), nz, ny, nx, offset);
+	extract_south<float>(f.get_mat_d_ptr(),
+						 f.dbs.get_south_ptr(), nz, ny, nx, offset);
+	extract_west<float>(f.get_mat_d_ptr(),
+						 f.dbs.get_west_ptr(), nz, ny, nx, offset);
+	extract_east<float>(f.get_mat_d_ptr(),
+						 f.dbs.get_east_ptr(), nz, ny, nx, offset);
+	extract_top<float>(f.get_mat_d_ptr(),
+						 f.dbs.get_top_ptr(), nz, ny, nx, offset);
+	extract_bottom<float>(f.get_mat_d_ptr(),
+						 f.dbs.get_bottom_ptr(), nz, ny, nx, offset);
+	
+
+	f.hbs.copy(f.dbs);
+
+
+	BOOST_CHECK( std::equal(f.expected_n.begin(), f.expected_n.end(),
+							f.hbs.get_north_ptr()) );
+	BOOST_CHECK( std::equal(f.expected_s.begin(), f.expected_s.end(),
+							f.hbs.get_south_ptr()) );
+	BOOST_CHECK( std::equal(f.expected_w.begin(), f.expected_w.end(),
+							f.hbs.get_west_ptr()) );
+	BOOST_CHECK( std::equal(f.expected_e.begin(), f.expected_e.end(),
+							f.hbs.get_east_ptr()) );
+	BOOST_CHECK( std::equal(f.expected_t.begin(), f.expected_t.end(),
+							f.hbs.get_top_ptr()) );
+	BOOST_CHECK( std::equal(f.expected_b.begin(), f.expected_b.end(),
+							f.hbs.get_bottom_ptr()) );
+
+}
+
+BOOST_AUTO_TEST_CASE( extract_bdy_large_square_off )
+{
+
+	const int nx = 100;
+	const int ny = nx;
+	const int nz = nx;
+	const int offset = 5;
+
+	ExtractBdyFixture<float> f(nz, ny, nx, offset);
+
+	extract_north<float>(f.get_mat_d_ptr(),
+						 f.dbs.get_north_ptr(), nz, ny, nx, offset);
+	extract_south<float>(f.get_mat_d_ptr(),
+						 f.dbs.get_south_ptr(), nz, ny, nx, offset);
+	extract_west<float>(f.get_mat_d_ptr(),
+						 f.dbs.get_west_ptr(), nz, ny, nx, offset);
+	extract_east<float>(f.get_mat_d_ptr(),
+						 f.dbs.get_east_ptr(), nz, ny, nx, offset);
+	extract_top<float>(f.get_mat_d_ptr(),
+						 f.dbs.get_top_ptr(), nz, ny, nx, offset);
+	extract_bottom<float>(f.get_mat_d_ptr(),
+						 f.dbs.get_bottom_ptr(), nz, ny, nx, offset);
+	
+
+	f.hbs.copy(f.dbs);
+
+
+	BOOST_CHECK( std::equal(f.expected_n.begin(), f.expected_n.end(),
+							f.hbs.get_north_ptr()) );
+	BOOST_CHECK( std::equal(f.expected_s.begin(), f.expected_s.end(),
+							f.hbs.get_south_ptr()) );
+	BOOST_CHECK( std::equal(f.expected_w.begin(), f.expected_w.end(),
+							f.hbs.get_west_ptr()) );
+	BOOST_CHECK( std::equal(f.expected_e.begin(), f.expected_e.end(),
+							f.hbs.get_east_ptr()) );
+	BOOST_CHECK( std::equal(f.expected_t.begin(), f.expected_t.end(),
+							f.hbs.get_top_ptr()) );
+	BOOST_CHECK( std::equal(f.expected_b.begin(), f.expected_b.end(),
+							f.hbs.get_bottom_ptr()) );
+
+}
+
+
+BOOST_AUTO_TEST_CASE( extract_bdy_small_nonsquare_off )
+{
+
+	const int nx = 3;
+	const int ny = nx+1;
+	const int nz = ny+1;
+	const int offset = 1;
+
+	ExtractBdyFixture<float> f(nz, ny, nx, offset);
+
+	extract_north<float>(f.get_mat_d_ptr(),
+						 f.dbs.get_north_ptr(), nz, ny, nx, offset);
+	extract_south<float>(f.get_mat_d_ptr(),
+						 f.dbs.get_south_ptr(), nz, ny, nx, offset);
+	extract_west<float>(f.get_mat_d_ptr(),
+						 f.dbs.get_west_ptr(), nz, ny, nx, offset);
+	extract_east<float>(f.get_mat_d_ptr(),
+						 f.dbs.get_east_ptr(), nz, ny, nx, offset);
+	extract_top<float>(f.get_mat_d_ptr(),
+						 f.dbs.get_top_ptr(), nz, ny, nx, offset);
+	extract_bottom<float>(f.get_mat_d_ptr(),
+						 f.dbs.get_bottom_ptr(), nz, ny, nx, offset);
+	
+
+	f.hbs.copy(f.dbs);
+
+
+	BOOST_CHECK( std::equal(f.expected_n.begin(), f.expected_n.end(),
+							f.hbs.get_north_ptr()) );
+	BOOST_CHECK( std::equal(f.expected_s.begin(), f.expected_s.end(),
+							f.hbs.get_south_ptr()) );
+	BOOST_CHECK( std::equal(f.expected_w.begin(), f.expected_w.end(),
+							f.hbs.get_west_ptr()) );
+	BOOST_CHECK( std::equal(f.expected_e.begin(), f.expected_e.end(),
+							f.hbs.get_east_ptr()) );
+	BOOST_CHECK( std::equal(f.expected_t.begin(), f.expected_t.end(),
+							f.hbs.get_top_ptr()) );
+	BOOST_CHECK( std::equal(f.expected_b.begin(), f.expected_b.end(),
+							f.hbs.get_bottom_ptr()) );
+
+}
+
+
+BOOST_AUTO_TEST_CASE( extract_bdy_large_nonsquare_off )
+{
+
+	const int nx = 50;
+	const int ny = nx*2;
+	const int nz = ny*2;
+	const int offset = 5;
+
+	ExtractBdyFixture<float> f(nz, ny, nx, offset);
+
+	extract_north<float>(f.get_mat_d_ptr(),
+						 f.dbs.get_north_ptr(), nz, ny, nx, offset);
+	extract_south<float>(f.get_mat_d_ptr(),
+						 f.dbs.get_south_ptr(), nz, ny, nx, offset);
+	extract_west<float>(f.get_mat_d_ptr(),
+						 f.dbs.get_west_ptr(), nz, ny, nx, offset);
+	extract_east<float>(f.get_mat_d_ptr(),
+						 f.dbs.get_east_ptr(), nz, ny, nx, offset);
+	extract_top<float>(f.get_mat_d_ptr(),
+						 f.dbs.get_top_ptr(), nz, ny, nx, offset);
+	extract_bottom<float>(f.get_mat_d_ptr(),
+						 f.dbs.get_bottom_ptr(), nz, ny, nx, offset);
+	
+
+	f.hbs.copy(f.dbs);
+
+
+	BOOST_CHECK( std::equal(f.expected_n.begin(), f.expected_n.end(),
+							f.hbs.get_north_ptr()) );
+	BOOST_CHECK( std::equal(f.expected_s.begin(), f.expected_s.end(),
+							f.hbs.get_south_ptr()) );
+	BOOST_CHECK( std::equal(f.expected_w.begin(), f.expected_w.end(),
+							f.hbs.get_west_ptr()) );
+	BOOST_CHECK( std::equal(f.expected_e.begin(), f.expected_e.end(),
+							f.hbs.get_east_ptr()) );
+	BOOST_CHECK( std::equal(f.expected_t.begin(), f.expected_t.end(),
+							f.hbs.get_top_ptr()) );
+	BOOST_CHECK( std::equal(f.expected_b.begin(), f.expected_b.end(),
+							f.hbs.get_bottom_ptr()) );
 
 }
 

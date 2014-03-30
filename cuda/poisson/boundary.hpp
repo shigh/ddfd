@@ -1,4 +1,4 @@
-
+ 
 
 #ifndef __BOUNDARY_H
 #define __BOUNDARY_H
@@ -23,10 +23,10 @@ enum Boundary
 
 template<typename T>
 void extract_top(T* from_d, T* to_d,
-				 size_t nz, size_t ny, size_t nx)
+				 size_t nz, size_t ny, size_t nx, size_t offset=0)
 {
 
-	cudaMemcpy(to_d, &from_d[(nz-1)*nx*ny],
+	cudaMemcpy(to_d, &from_d[(nz-1)*nx*ny - offset*nx*ny],
 			   nx*ny*sizeof(T), cudaMemcpyDeviceToDevice);
 
 }
@@ -45,10 +45,10 @@ void set_top(T* from_d, T* to_d,
 
 template<typename T>
 void extract_bottom(T* from_d, T* to_d,
-					size_t nz, size_t ny, size_t nx)
+					size_t nz, size_t ny, size_t nx, size_t offset=0)
 {
 
-	cudaMemcpy(to_d, from_d, nx*ny*sizeof(T), cudaMemcpyDeviceToDevice);
+	cudaMemcpy(to_d, &from_d[offset*nx*ny], nx*ny*sizeof(T), cudaMemcpyDeviceToDevice);
 
 }
 
@@ -65,7 +65,7 @@ void set_bottom(T* from_d, T* to_d,
 
 template<typename T>
 __global__ void extract_west_kernel(T* from, T* to,
-									size_t nz, size_t ny, size_t nx)
+									size_t nz, size_t ny, size_t nx, size_t offset)
 {
 
 	int y = threadIdx.x + blockIdx.x*blockDim.x;
@@ -79,7 +79,7 @@ __global__ void extract_west_kernel(T* from, T* to,
 
 		while(y < ny)
 		{
-			to[y + z*ny] = from[y*nx + z*nx*ny];
+			to[y + z*ny] = from[y*nx + z*nx*ny + offset];
 			y += y_stride;
 		}
 
@@ -119,12 +119,12 @@ __global__ void set_west_kernel(T* from, T* to,
 
 template<typename T>
 void extract_west(T* from, T* to,
-				  size_t nz, size_t ny, size_t nx)
+				  size_t nz, size_t ny, size_t nx, size_t offset=0)
 {
 
 	dim3 blocks(32, 32);
 	dim3 threads(16, 16, 1);
-	extract_west_kernel<<<blocks, threads>>>(from, to, nz, ny, nx);
+	extract_west_kernel<<<blocks, threads>>>(from, to, nz, ny, nx, offset);
 
 }
 
@@ -143,7 +143,7 @@ void set_west(T* from, T* to,
 
 template<typename T>
 __global__ void extract_east_kernel(T* from, T* to,
-									size_t nz, size_t ny, size_t nx)
+									size_t nz, size_t ny, size_t nx, size_t offset)
 {
 
 	int y = threadIdx.x + blockIdx.x*blockDim.x;
@@ -157,7 +157,7 @@ __global__ void extract_east_kernel(T* from, T* to,
 
 		while(y < ny)
 		{
-			to[y + z*ny] = from[(nx-1) + y*nx + z*nx*ny];
+			to[y + z*ny] = from[(nx-1) + y*nx + z*nx*ny - offset];
 			y += y_stride;
 		}
 
@@ -197,12 +197,12 @@ __global__ void set_east_kernel(T* from, T* to,
 
 template<typename T>
 void extract_east(T* from, T* to,
-				  size_t nz, size_t ny, size_t nx)
+				  size_t nz, size_t ny, size_t nx, size_t offset=0)
 {
 
 	dim3 blocks(32, 32);
 	dim3 threads(16, 16, 1);
-	extract_east_kernel<<<blocks, threads>>>(from, to, nz, ny, nx);
+	extract_east_kernel<<<blocks, threads>>>(from, to, nz, ny, nx, offset);
 
 }
 
@@ -221,7 +221,7 @@ void set_east(T* from, T* to,
 
 template<typename T>
 __global__ void extract_north_kernel(T* from, T* to,
-									 size_t nz, size_t ny, size_t nx)
+									 size_t nz, size_t ny, size_t nx, size_t offset)
 {
 
 	int x = threadIdx.x + blockIdx.x*blockDim.x;
@@ -235,7 +235,7 @@ __global__ void extract_north_kernel(T* from, T* to,
 
 		while(x < nx)
 		{
-			to[x + z*nx] = from[(ny-1)*nx + x + z*nx*ny];
+			to[x + z*nx] = from[(ny-1)*nx + x + z*nx*ny - offset*nx];
 			x += x_stride;
 		}
 
@@ -275,12 +275,12 @@ __global__ void set_north_kernel(T* from, T* to,
 
 template<typename T>
 void extract_north(T* from, T* to,
-				   size_t nz, size_t ny, size_t nx)
+				   size_t nz, size_t ny, size_t nx, size_t offset=0)
 {
 
 	dim3 blocks(32, 32);
 	dim3 threads(16, 16, 1);
-	extract_north_kernel<<<blocks, threads>>>(from, to, nz, ny, nx);
+	extract_north_kernel<<<blocks, threads>>>(from, to, nz, ny, nx, offset);
 
 }
 
@@ -299,7 +299,7 @@ void set_north(T* from, T* to,
 
 template<typename T>
 __global__ void extract_south_kernel(T* from, T* to,
-									 size_t nz, size_t ny, size_t nx)
+									 size_t nz, size_t ny, size_t nx, size_t offset)
 {
 
 	int x = threadIdx.x + blockIdx.x*blockDim.x;
@@ -313,7 +313,7 @@ __global__ void extract_south_kernel(T* from, T* to,
 
 		while(x < nx)
 		{
-			to[x + z*nx] = from[x + z*nx*ny];
+			to[x + z*nx] = from[x + z*nx*ny + offset*nx];
 			x += x_stride;
 		}
 
@@ -353,12 +353,12 @@ __global__ void set_south_kernel(T* from, T* to,
 
 template<typename T>
 void extract_south(T* from, T* to,
-				   size_t nz, size_t ny, size_t nx)
+				   size_t nz, size_t ny, size_t nx, size_t offset=0)
 {
 
 	dim3 blocks(32, 32);
 	dim3 threads(16, 16, 1);
-	extract_south_kernel<<<blocks, threads>>>(from, to, nz, ny, nx);
+	extract_south_kernel<<<blocks, threads>>>(from, to, nz, ny, nx, offset);
 
 }
 
