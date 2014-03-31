@@ -6,7 +6,8 @@ CPPFLAGS+=$(CUSP)
 CPPFLAGS+=-I../
 LDLIBS  += -lboost_unit_test_framework
 
-OBJS = tests.o test_cusp_3d.o test_solver_cusp.o test_boundary_set.o
+OBJS = tests.o test_cusp_3d.o test_solver_cusp.o test_boundary_set.o \
+       test_two_domain.o
 
 .PHONY: all test clean
 
