@@ -36,16 +36,14 @@ BOOST_AUTO_TEST_CASE( solver_cusp_solver_completes )
 {
 	int nx, ny, nz;
 	nx = ny = nz = 10;
+	const int N = nx*ny*nz;
 
 	float dx = 2*M_PI/(nx-1.);
 	float dy = 2*M_PI/(ny-1.);
 	float dz = 2*M_PI/(nz-1.);
 
-	cusp::csr_matrix<int, float, cusp::device_memory> A;
-	build_sparse_3d_poisson<int, float>(A, nz, dz, ny, dy, nx, dx);
-
-	cusp::array1d<float, cusp::device_memory> b(A.num_rows, 0);
-	cusp::array1d<float, cusp::device_memory> x(A.num_rows, 0);
+	cusp::array1d<float, cusp::device_memory> b(N, 0);
+	cusp::array1d<float, cusp::device_memory> x(N, 0);
 
 	for(int k=0; k<nz; k++)
 		for(int i=0; i<ny; i++)
