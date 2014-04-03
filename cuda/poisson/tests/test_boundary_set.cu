@@ -880,4 +880,41 @@ BOOST_AUTO_TEST_CASE( extract_bdy_large_nonsquare_off )
 }
 
 
+
+BOOST_AUTO_TEST_CASE( set_all_nonsquare )
+{
+
+	const int nx = 5;
+	const int ny = nx*2;
+	const int nz = ny*2;
+	const int N  = nz*ny*nx;
+
+	thrust::host_vector<float> mat_h(nz*ny*nx, 0);
+	for(int k=0; k<N; k++)
+		mat_h[k] = k;
+				
+	thrust::device_vector<float> mat_d(mat_h);
+	thrust::device_vector<float> x_d(nz*ny*nx);
+
+	set_all_boundaries(thrust::raw_pointer_cast(&mat_d[0]),
+					   thrust::raw_pointer_cast(&x_d[0]),
+					   nz, ny, nx);
+
+	thrust::host_vector<float> x_h(x_d);
+	int n = 0;
+	for(int k=0; k<nz; k++)
+		for(int j=0; j<ny; j++)
+			for(int i=0; i<nx; i++)
+			{
+				if(k>0 && k<nz-1 && j>0 && j<ny-1 && i>0 && i<nx-1)
+					x_h[n] = n;
+				n++;
+			}
+
+	BOOST_CHECK( thrust::equal(mat_h.begin(), mat_h.end(), x_h.begin()) );
+	
+
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()

@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <cstddef>
+#include <algorithm>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 #include <thrust/copy.h>
@@ -374,6 +375,35 @@ void set_south(T* from, T* to,
 
 }
 
+
+template<typename T>
+void set_all_boundaries(T* from_d, T* to_d, size_t nz, size_t ny, size_t nx)
+{
+
+	const size_t maxn = std::max(std::max(nz, ny), nx);
+	const size_t N    = maxn*maxn;
+	thrust::device_vector<T> tmp(N);
+	T* tmp_ptr = thrust::raw_pointer_cast(&tmp[0]);
+
+	extract_top<T>(from_d, tmp_ptr, nz, ny, nx);
+	set_top<T>(tmp_ptr, to_d, nz, ny, nx);
+
+	extract_bottom<T>(from_d, tmp_ptr, nz, ny, nx);
+	set_bottom<T>(tmp_ptr, to_d, nz, ny, nx);
+
+	extract_north<T>(from_d, tmp_ptr, nz, ny, nx);
+	set_north<T>(tmp_ptr, to_d, nz, ny, nx);
+
+	extract_south<T>(from_d, tmp_ptr, nz, ny, nx);
+	set_south<T>(tmp_ptr, to_d, nz, ny, nx);
+
+	extract_west<T>(from_d, tmp_ptr, nz, ny, nx);
+	set_west<T>(tmp_ptr, to_d, nz, ny, nx);
+
+	extract_east<T>(from_d, tmp_ptr, nz, ny, nx);
+	set_east<T>(tmp_ptr, to_d, nz, ny, nx);
+	
+}
 
 template<typename T, class Vector>
 class BoundarySet
