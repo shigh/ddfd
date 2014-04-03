@@ -7,6 +7,7 @@
 #include <cusp/csr_matrix.h>
 #include <cusp/krylov/cg.h>
 #include "cusp_poisson.hpp"
+#include "boundary.hpp"
 
 template<typename ValueType, class DeviceVector>
 class Solver3DBase
@@ -75,6 +76,9 @@ public:
 
 	void solve(DeviceVector& x_d)
 	{
+		set_all_boundaries(thrust::raw_pointer_cast(&x_d[0]),
+						   thrust::raw_pointer_cast(&this->f[0]),
+						   this->nz, this->ny, this->nx);
 		cusp::default_monitor<float> monitor(this->f, 100, 1e-6);
 		cusp::krylov::cg(A, x_d, this->f, monitor);	
 	}
