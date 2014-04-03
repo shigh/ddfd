@@ -89,4 +89,11 @@ bool all_equal_host(T* a_d, int N, T k)
 }
 
 
+template<typename T>
+T square(T a)
+{
+	return a*a;
+}
+
+
 #endif
