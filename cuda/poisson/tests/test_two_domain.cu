@@ -239,5 +239,116 @@ BOOST_AUTO_TEST_CASE( north_south )
 }
 
 
+BOOST_AUTO_TEST_CASE( top_bottom )
+{
+	const int nx = 10;
+	const int ny = nx;
+	const int nz = ny;
+	const int N = nx*ny*nz;
+
+	const float dx = 2*M_PI/(nx-1.);
+	const float dy = 2*M_PI/(ny-1.);
+	const float dz = 2*M_PI/(nz-1.);
+
+	// Region 1 has x<x2
+	// Region 2 has x>=x1
+	const int z1_bnd = 4;
+	const int z2_bnd = 6;
+
+	const int nz1 = z2_bnd;
+	const int nz2 = ny-z1_bnd;
+
+	// Offsets for boundary extraction
+	const int off1 = z2_bnd-z1_bnd-1;
+	const int off2 = off1;
+
+	// Number of iterations
+	const int n_iter = 10;
+
+	// Reference solution	
+	cusp::array1d<float, cusp::host_memory>   b_h(N, 0);
+	cusp::array1d<float, cusp::device_memory> x_full(N, 0);
+
+	for(int k=0; k<nz; k++)
+		for(int i=0; i<ny; i++)
+			for(int j=0; j<nx; j++)
+				b_h[j+i*nx+k*nx*ny] = sin(j*dx)*sin(i*dy)*sin(k*dz);
+
+	cusp::array1d<float, cusp::device_memory> b_full(b_h);
+	PoissonSolver3DCUSP<float> solver_full(b_full, nz, dz, ny, dy, nx, dx);
+
+	solver_full.solve(x_full);
+
+	cusp::array1d<float, cusp::host_memory> x_full_h(x_full);
+
+	
+	// Left domain (domain 1)
+	cusp::array1d<float, cusp::host_memory>   b1_h(nx*ny*nz1, 0);
+	cusp::array1d<float, cusp::device_memory> x1(nx*ny*nz1, 0);
+
+	for(int k=0; k<nz1; k++)
+		for(int i=0; i<ny; i++)
+			for(int j=0; j<nx; j++)
+				b1_h[j+i*nx+k*nx*ny] = sin(j*dx)*sin(i*dy)*sin(k*dz);
+
+	cusp::array1d<float, cusp::device_memory> b1(b1_h);
+	PoissonSolver3DCUSP<float> solver1(b1, nz1, dz, ny, dy, nx, dx);
+
+	// Right domain (domain 2)
+	cusp::array1d<float, cusp::host_memory>   b2_h(nx*ny*nz2, 0);
+	cusp::array1d<float, cusp::device_memory> x2(nx*ny*nz2, 0);
+
+	for(int k=z1_bnd; k<nz; k++)
+		for(int i=0; i<ny; i++)
+			for(int j=0; j<nx; j++)
+				b2_h[j+i*nx+(k-z1_bnd)*nx*ny] = sin(j*dx)*sin(i*dy)*sin(k*dz);
+
+	cusp::array1d<float, cusp::device_memory> b2(b2_h);
+	PoissonSolver3DCUSP<float> solver2(b2, nz2, dz, ny, dy, nx, dx);
+
+
+	float error;
+	thrust::device_vector<float> tmp(nx*ny*nz, 0);
+	float* tmp_ptr = thrust::raw_pointer_cast(&tmp[0]);
+	for(int i=0; i<n_iter; i++)
+	{
+	    solver1.solve(x1);
+	    solver2.solve(x2);
+
+		extract_top<float>(thrust::raw_pointer_cast(&x1[0]),
+						   tmp_ptr, nz1, ny, nx, off1);
+		set_bottom<float>(tmp_ptr,
+						  thrust::raw_pointer_cast(&x2[0]),
+						  nz2, ny, nx);
+
+		extract_bottom<float>(thrust::raw_pointer_cast(&x2[0]),
+							  tmp_ptr, nz2, ny, nx, off2);
+		set_top<float>(tmp_ptr,
+					   thrust::raw_pointer_cast(&x1[0]),
+					   nz1, ny, nx);
+
+	    cusp::array1d<float, cusp::host_memory> x1_h(x1);
+	    cusp::array1d<float, cusp::host_memory> x2_h(x2);
+
+		error = 0;
+	    for(int i=0; i<ny; i++)
+			for(int j=0; j<nx; j++)
+			{
+
+				for(int k=0; k<nz1; k++)
+					error+=square<float>(x_full_h[j+i*nx+k*nx*ny]-x1_h[j+i*nx+k*nx*ny]);
+
+				for(int k=z1_bnd; k<nz; k++)
+					error+=square<float>(x_full_h[j+i*nx+k*nx*ny]-x2_h[j+i*nx+(k-z1_bnd)*nx*ny]);
+
+			}
+
+	}
+
+	BOOST_CHECK( error < 10e-6 );	
+
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
 
