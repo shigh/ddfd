@@ -1,4 +1,6 @@
- 
+/*! \file 
+ * Tools for working with matrix boundaries
+ */
 
 #ifndef __BOUNDARY_H
 #define __BOUNDARY_H
@@ -10,7 +12,9 @@
 #include <thrust/host_vector.h>
 #include <thrust/copy.h>
 
-
+/*!
+ * For selecting boundaries
+ */
 enum Boundary
 {
     North  = 1u << 0,
@@ -22,6 +26,13 @@ enum Boundary
 };
 
 
+/*!
+ * Copy Top boundary from 3D matrix
+ *
+ * \param from_d 3D device matrix
+ * \param to_d 2D device matrix
+ * \param offset Number of steps back from Top
+ */
 template<typename T>
 void extract_top(T* from_d, T* to_d,
 				 size_t nz, size_t ny, size_t nx, size_t offset=0)
@@ -32,7 +43,12 @@ void extract_top(T* from_d, T* to_d,
 
 }
 
-
+/*!
+ * Copy Top boundary into 3D matrix
+ *
+ * \param from_d 2D device matrix
+ * \param to_d 3D device matrix
+ */
 template<typename T>
 void set_top(T* from_d, T* to_d,
 			 size_t nz, size_t ny, size_t nx)
@@ -43,7 +59,13 @@ void set_top(T* from_d, T* to_d,
 
 }
 
-
+/*!
+ * Copy Bottom boundary from 3D matrix
+ *
+ * \param from_d 3D device matrix
+ * \param to_d 2D device matrix
+ * \param offset Number of steps back from Bottom
+ */
 template<typename T>
 void extract_bottom(T* from_d, T* to_d,
 					size_t nz, size_t ny, size_t nx, size_t offset=0)
@@ -53,7 +75,12 @@ void extract_bottom(T* from_d, T* to_d,
 
 }
 
-
+/*!
+ * Copy Bottom boundary into 3D matrix
+ *
+ * \param from_d 2D device matrix
+ * \param to_d 3D device matrix
+ */
 template<typename T>
 void set_bottom(T* from_d, T* to_d,
 					size_t nz, size_t ny, size_t nx)
@@ -117,7 +144,13 @@ __global__ void set_west_kernel(T* from, T* to,
 
 }
 
-
+/*!
+ * Copy West boundary from 3D matrix
+ *
+ * \param from_d 3D device matrix
+ * \param to_d 2D device matrix
+ * \param offset Number of steps back from West
+ */
 template<typename T>
 void extract_west(T* from, T* to,
 				  size_t nz, size_t ny, size_t nx, size_t offset=0)
@@ -129,7 +162,12 @@ void extract_west(T* from, T* to,
 
 }
 
-
+/*!
+ * Copy West boundary into 3D matrix
+ *
+ * \param from_d 2D device matrix
+ * \param to_d 3D device matrix
+ */
 template<typename T>
 void set_west(T* from, T* to,
 			  size_t nz, size_t ny, size_t nx)
@@ -195,7 +233,13 @@ __global__ void set_east_kernel(T* from, T* to,
 
 }
 
-
+/*!
+ * Copy East boundary from 3D matrix
+ *
+ * \param from_d 3D device matrix
+ * \param to_d 2D device matrix
+ * \param offset Number of steps back from East
+ */
 template<typename T>
 void extract_east(T* from, T* to,
 				  size_t nz, size_t ny, size_t nx, size_t offset=0)
@@ -207,7 +251,12 @@ void extract_east(T* from, T* to,
 
 }
 
-
+/*!
+ * Copy East boundary into 3D matrix
+ *
+ * \param from_d 2D device matrix
+ * \param to_d 3D device matrix
+ */
 template<typename T>
 void set_east(T* from, T* to,
 			  size_t nz, size_t ny, size_t nx)
@@ -273,7 +322,13 @@ __global__ void set_north_kernel(T* from, T* to,
 
 }
 
-
+/*!
+ * Copy North boundary from 3D matrix
+ *
+ * \param from_d 3D device matrix
+ * \param to_d 2D device matrix
+ * \param offset Number of steps back from North
+ */
 template<typename T>
 void extract_north(T* from, T* to,
 				   size_t nz, size_t ny, size_t nx, size_t offset=0)
@@ -285,7 +340,12 @@ void extract_north(T* from, T* to,
 
 }
 
-
+/*!
+ * Copy North boundary into 3D matrix
+ *
+ * \param from_d 2D device matrix
+ * \param to_d 3D device matrix
+ */
 template<typename T>
 void set_north(T* from, T* to,
 			   size_t nz, size_t ny, size_t nx)
@@ -351,7 +411,13 @@ __global__ void set_south_kernel(T* from, T* to,
 
 }
 
-
+/*!
+ * Copy South boundary from 3D matrix
+ *
+ * \param from_d 3D device matrix
+ * \param to_d 2D device matrix
+ * \param offset Number of steps back from South
+ */
 template<typename T>
 void extract_south(T* from, T* to,
 				   size_t nz, size_t ny, size_t nx, size_t offset=0)
@@ -363,7 +429,12 @@ void extract_south(T* from, T* to,
 
 }
 
-
+/*!
+ * Copy South boundary into 3D matrix
+ *
+ * \param from_d 2D device matrix
+ * \param to_d 3D device matrix
+ */
 template<typename T>
 void set_south(T* from, T* to,
 			   size_t nz, size_t ny, size_t nx)
@@ -375,7 +446,11 @@ void set_south(T* from, T* to,
 
 }
 
-
+/*!
+ * Copy boundaries from 3D device matrix to 3D device matrix
+ * \param from_d 3D device matrix to copy from
+ * \param to_d 3D device matrix to copy to
+ */
 template<typename T>
 void set_all_boundaries(T* from_d, T* to_d, size_t nz, size_t ny, size_t nx)
 {
@@ -405,6 +480,9 @@ void set_all_boundaries(T* from_d, T* to_d, size_t nz, size_t ny, size_t nx)
 	
 }
 
+/*!
+ * Hold and move all boundaries of a 3D matrix
+ */
 template<typename T, class Vector>
 class BoundarySet
 {
@@ -432,6 +510,10 @@ public:
 		west(nz_*ny_, 0),  east(nz_*ny_, 0),
 		top(ny_*nx_, 0),   bottom(ny_*nx_, 0) {;}
 
+	/*!
+	 * Copy all boundaries from a boundary set.
+	 * Intended for use moving boundaries to and from device/host.
+	 */
 	template<class FromBoundarySet>
 	void copy(FromBoundarySet& from)
 	{
@@ -445,8 +527,6 @@ public:
 				
 	}
 
-	// Get raw pointers for use as MPI comm buffers
-	
 	T* get_north_ptr()
 	{
 		return thrust::raw_pointer_cast(&north[0]);
@@ -479,7 +559,9 @@ public:
 
 };
 
-
+/*!
+ * Boundaries stored on host
+ */
 template<typename T>
 class HostBoundarySet: public BoundarySet<T, thrust::host_vector<T> >
 {
@@ -494,7 +576,9 @@ public:
 
 };
 
-
+/*!
+ * Boundaries stored on device
+ */
 template<typename T>
 class DeviceBoundarySet: public BoundarySet<T, thrust::device_vector<T> >
 {

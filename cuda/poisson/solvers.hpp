@@ -1,3 +1,6 @@
+/*! \file
+ * Classes encapsulating solver logic
+ */
 
 #ifndef __SOLVERS_H
 #define __SOLVERS_H
@@ -9,6 +12,9 @@
 #include "cusp_poisson.hpp"
 #include "boundary.hpp"
 
+/*!
+ * Base class for solvers
+ */
 template<typename ValueType, class DeviceVector>
 class Solver3DBase
 {
@@ -41,11 +47,16 @@ public:
 		f(f_), nz(nz_), dz(dz_),
 		ny(ny_), dy(dy_), nx(nx_), dx(dx_) {};
 
+	/*!
+	 * Solve $A x_d = b$ for $x_d$
+	 */
 	virtual void solve(DeviceVector& x_d) = 0;
 
 };
 
-
+/*!
+ * Solver built on CUSP sparse matrix library
+ */
 template<typename ValueType>
 class PoissonSolver3DCUSP :
 	public Solver3DBase<ValueType, cusp::array1d<ValueType, cusp::device_memory> >
