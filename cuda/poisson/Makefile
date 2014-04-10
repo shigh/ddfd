@@ -11,11 +11,15 @@ all : $(OBJS)
 
 tinker : $(OBJS)
 
+docs :
+	doxygen Doxyfile
+
 $(OBJS) $(RUN_OBJS) $(TEST_OBJS) : %.o : %.cu
 	$(CC) $(CPPFLAGS) -c -o $@ $<
 
 clean:
 	rm -vf *.o *.out
+	rm -rf html
 
 # For emacs flymake mode
 check-syntax:
