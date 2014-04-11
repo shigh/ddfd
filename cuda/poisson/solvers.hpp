@@ -23,6 +23,7 @@ protected:
 
 	DeviceVector f;
 
+	// Pointer to first element in f
 	ValueType* device_pointer_cast_first(DeviceVector& vec)
 	{
 		return thrust::raw_pointer_cast(&vec[0]);

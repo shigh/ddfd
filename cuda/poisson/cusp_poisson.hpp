@@ -1,3 +1,6 @@
+/*! \file
+ * Build cusp sparse matrix for solving 3D Poisson
+ */
 
 #ifndef __CUSP_POISSON_H
 #define __CUSP_POISSON_H
@@ -9,7 +12,11 @@
 #include <cusp/print.h>
 #include <cusp/krylov/cg.h>
 
-
+/*! 
+ * Build 3D cusp matrix
+ * \param A_out Return constructed matrix by reference. Does not need to be initialized.
+ * \tparam SparseMatrix A CUSP sparse matrix copy constructable from coo_matrix.
+ */
 template<typename IndexType, typename ValueType, class SparseMatrix>
 void build_sparse_3d_poisson(SparseMatrix& A_out,
 							 const IndexType nz, const ValueType dz,
