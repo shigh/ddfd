@@ -1,8 +1,8 @@
 /*! \file
  * Useful utility functions
  */
-#ifndef __JACB_UTILS_H
-#define __JACB_UTILS_H
+
+#pragma once
 
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
@@ -63,4 +63,3 @@ void save_vector(const T& vec, const std::string& file, const char sep=' ')
 
 }
 
-#endif

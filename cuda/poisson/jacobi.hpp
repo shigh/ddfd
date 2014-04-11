@@ -1,6 +1,5 @@
 
-#ifndef __JACOBI_H
-#define __JACOBI_H
+#pragma once
 
 #include <thrust/device_vector.h>
 #include "utils.hpp"
@@ -20,5 +19,3 @@ IterationStats jacobi_solve_3d(thrust::device_vector<float>& x,
 							   int nz, float dz, int ny, float dy, int nx, float dx,
 							   int max_iter, float tol);
 
-
-#endif

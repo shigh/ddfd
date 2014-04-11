@@ -2,8 +2,7 @@
  * Tools for working with matrix boundaries
  */
 
-#ifndef __BOUNDARY_H
-#define __BOUNDARY_H
+#pragma once
 
 #include <vector>
 #include <cstddef>
@@ -253,4 +252,3 @@ public:
 
 #include "boundary.inl"
 
-#endif

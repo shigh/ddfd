@@ -2,8 +2,7 @@
  * Classes encapsulating solver logic
  */
 
-#ifndef __SOLVERS_H
-#define __SOLVERS_H
+#pragma once
 
 #include <thrust/device_vector.h>
 #include <thrust/copy.h>
@@ -97,7 +96,4 @@ public:
 
 
 };
-
-
-#endif
 

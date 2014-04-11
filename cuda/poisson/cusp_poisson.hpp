@@ -2,9 +2,7 @@
  * Build cusp sparse matrix for solving 3D Poisson
  */
 
-#ifndef __CUSP_POISSON_H
-#define __CUSP_POISSON_H
-
+#pragma once
 
 #include <math.h>
 #include <cusp/coo_matrix.h>
@@ -89,6 +87,3 @@ void build_sparse_3d_poisson(SparseMatrix& A_out,
 
 }
 							 
-
-
-#endif
