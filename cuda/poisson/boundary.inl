@@ -384,3 +384,62 @@ void set_all_boundaries(T* from_d, T* to_d, size_t nz, size_t ny, size_t nx)
 	set_east<T>(tmp_ptr, to_d, nz, ny, nx);
 	
 }
+
+
+template<typename T, class Vector>
+template<class FromBoundarySet>
+void BoundarySet<T, Vector>::copy(FromBoundarySet& from)
+{
+
+	thrust::copy(from.north.begin(),  from.north.end(),  north.begin());
+	thrust::copy(from.south.begin(),  from.south.end(),  south.begin());
+	thrust::copy(from.west.begin(),   from.west.end(),   west.begin());
+	thrust::copy(from.east.begin(),   from.east.end(),   east.begin());
+	thrust::copy(from.top.begin(),    from.top.end(),    top.begin());
+	thrust::copy(from.bottom.begin(), from.bottom.end(), bottom.begin());
+				
+}
+
+template<typename T, class Vector>
+T* BoundarySet<T, Vector>::get_north_ptr()
+{
+	return thrust::raw_pointer_cast(&north[0]);
+}
+
+template<typename T, class Vector>
+T* BoundarySet<T, Vector>::get_south_ptr()
+{
+	return thrust::raw_pointer_cast(&south[0]);
+}
+
+template<typename T, class Vector>
+T* BoundarySet<T, Vector>::get_west_ptr()
+{
+	return thrust::raw_pointer_cast(&west[0]);
+}
+
+template<typename T, class Vector>
+T* BoundarySet<T, Vector>::get_east_ptr()
+{
+	return thrust::raw_pointer_cast(&east[0]);
+}
+
+template<typename T, class Vector>
+T* BoundarySet<T, Vector>::get_top_ptr()
+{
+	return thrust::raw_pointer_cast(&top[0]);
+}
+
+template<typename T, class Vector>
+T* BoundarySet<T, Vector>::get_bottom_ptr()
+{
+	return thrust::raw_pointer_cast(&bottom[0]);
+}
+
+template<typename T, class Vector>
+BoundarySet<T, Vector>::BoundarySet(size_t nz_, size_t ny_, size_t nx_):
+	nz(nz_), ny(ny_), nx(nx_),
+	north(nz_*nx_, 0), south(nz_*nx_, 0),
+	west(nz_*ny_, 0),  east(nz_*ny_, 0),
+	top(ny_*nx_, 0),   bottom(ny_*nx_, 0) {;}
+
