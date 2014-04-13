@@ -45,9 +45,6 @@ BOOST_AUTO_TEST_CASE( partition_grid_overlap )
 	std::vector<std::size_t> end;
 	partition_domain(start, end, N, n, k);
 
-	for(int i=0; i<n; i++)
-		std::cout << start[i] << ' ' << end[i] << std::endl;
-
 	std::vector<std::size_t> start_e(n);
 	start_e[0] = 0;	start_e[1] = 3;	start_e[2] = 6;
 	std::vector<std::size_t> end_e(n);
