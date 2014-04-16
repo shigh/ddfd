@@ -26,6 +26,84 @@ enum Boundary
 
 
 /*!
+ * Hold and move all boundaries of a 3D matrix
+ */
+template<typename T, class Vector>
+class BoundarySet
+{
+
+public:
+
+	// These vector defs should be protected
+	// I am keeping them public to simplify dev
+	// Do not use them in calling code!!!
+	Vector north;
+	Vector south;
+	Vector west;
+	Vector east;
+	Vector top;
+	Vector bottom;
+
+
+	const size_t nz;
+	const size_t ny;
+	const size_t nx;
+
+	BoundarySet(size_t nz_, size_t ny_, size_t nx_);
+
+	/*!
+	 * Copy all boundaries from a boundary set.
+	 * Intended for use moving boundaries to and from device/host.
+	 */
+	template<class FromBoundarySet>
+	void copy(FromBoundarySet& from);
+
+
+	T* get_north_ptr();
+	T* get_south_ptr();
+	T* get_west_ptr();
+	T* get_east_ptr();
+	T* get_top_ptr();
+	T* get_bottom_ptr();
+
+};
+
+/*!
+ * Boundaries stored on host
+ */
+template<typename T>
+class HostBoundarySet: public BoundarySet<T, thrust::host_vector<T> >
+{
+
+private:
+
+	typedef BoundarySet<T, thrust::host_vector<T> > Parent;
+
+public:
+	
+	HostBoundarySet(size_t nz_, size_t ny_, size_t nx_): Parent(nz_,ny_,nx_) {;}
+
+};
+
+/*!
+ * Boundaries stored on device
+ */
+template<typename T>
+class DeviceBoundarySet: public BoundarySet<T, thrust::device_vector<T> >
+{
+
+private:
+
+	typedef BoundarySet<T, thrust::device_vector<T> > Parent;
+
+public:
+	
+	DeviceBoundarySet(size_t nz_, size_t ny_, size_t nx_): Parent(nz_,ny_,nx_) {;}
+
+};
+
+
+/*!
  * Copy Top boundary from 3D matrix
  *
  * \param from_d 3D device matrix
@@ -173,81 +251,23 @@ void set_all_boundaries(T* from_d, T* to_d, size_t nz, size_t ny, size_t nx);
 
 
 /*!
- * Hold and move all boundaries of a 3D matrix
- */
-template<typename T, class Vector>
-class BoundarySet
-{
-
-public:
-
-	// These vector defs should be protected
-	// I am keeping them public to simplify dev
-	// Do not use them in calling code!!!
-	Vector north;
-	Vector south;
-	Vector west;
-	Vector east;
-	Vector top;
-	Vector bottom;
-
-
-	const size_t nz;
-	const size_t ny;
-	const size_t nx;
-
-	BoundarySet(size_t nz_, size_t ny_, size_t nx_);
-
-	/*!
-	 * Copy all boundaries from a boundary set.
-	 * Intended for use moving boundaries to and from device/host.
-	 */
-	template<class FromBoundarySet>
-	void copy(FromBoundarySet& from);
-
-
-	T* get_north_ptr();
-	T* get_south_ptr();
-	T* get_west_ptr();
-	T* get_east_ptr();
-	T* get_top_ptr();
-	T* get_bottom_ptr();
-
-};
-
-/*!
- * Boundaries stored on host
+ * Copy boundaries from BoundarySet to 3D device matrix
+ * \param bs DeviceBoundarySet object to copy from
+ * \param to_d 3D device matrix to copy to
  */
 template<typename T>
-class HostBoundarySet: public BoundarySet<T, thrust::host_vector<T> >
-{
+void set_all_boundaries(const DeviceBoundarySet<T>& bs, T* to_d,
+						size_t nz, size_t ny, size_t nx);
 
-private:
-
-	typedef BoundarySet<T, thrust::host_vector<T> > Parent;
-
-public:
-	
-	HostBoundarySet(size_t nz_, size_t ny_, size_t nx_): Parent(nz_,ny_,nx_) {;}
-
-};
 
 /*!
- * Boundaries stored on device
+ * Copy boundaries from 3D device matrix to BoundarySet object
+ * \param from_d 3D device matrix to extract from
+ * \param bs BoundarySet object to copy to
  */
 template<typename T>
-class DeviceBoundarySet: public BoundarySet<T, thrust::device_vector<T> >
-{
-
-private:
-
-	typedef BoundarySet<T, thrust::device_vector<T> > Parent;
-
-public:
-	
-	DeviceBoundarySet(size_t nz_, size_t ny_, size_t nx_): Parent(nz_,ny_,nx_) {;}
-
-};
+void extract_all_boundaries(const T* from_d, DeviceBoundarySet<T>& bs,
+							size_t nz, size_t ny, size_t nx);
 
 
 #include "boundary.inl"

@@ -30,10 +30,10 @@ void partition_domain(std::vector<std::size_t>& start, std::vector<std::size_t>&
 	for(std::size_t i=0; i<n; i++)
 	{
 		start[i] = last_end-k;
-		end[i]   = last_end-k+domain_size-1;
-		last_end = end[i];
+		end[i]   = last_end-k+domain_size;
+		last_end = last_end-k+domain_size-1;
 	}
 
-	end[n-1] = N-1;
+	end[n-1] = N;
 
 }

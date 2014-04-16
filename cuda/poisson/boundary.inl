@@ -386,6 +386,46 @@ void set_all_boundaries(T* from_d, T* to_d, size_t nz, size_t ny, size_t nx)
 }
 
 
+template<typename T>
+void set_all_boundaries(const DeviceBoundarySet<T>& bs, T* to_d,
+						size_t nz, size_t ny, size_t nx)
+{
+
+	set_top<T>(bs.get_top_prt(), to_d, nz, ny, nx);
+
+	set_bottom<T>(bs.get_bottom_prt(), to_d, nz, ny, nx);
+
+	set_north<T>(bs.get_north_prt(), to_d, nz, ny, nx);
+	
+	set_south<T>(bs.get_south_prt(), to_d, nz, ny, nx);
+
+	set_west<T>(bs.get_west_prt(), to_d, nz, ny, nx);
+
+	set_east<T>(bs.get_east_prt(), to_d, nz, ny, nx);
+	
+}
+
+
+template<typename T>
+void extract_all_boundaries(const T* from_d, DeviceBoundarySet<T>& bs,
+							size_t nz, size_t ny, size_t nx)
+{
+
+	extract_top<T>(from_d, bs.get_top_prt(), nz, ny, nx);
+
+	extract_bottom<T>(from_d, bs.get_bottom_prt(), nz, ny, nx);
+
+	extract_north<T>(from_d, bs.get_north_prt(), nz, ny, nx);
+	
+	extract_south<T>(from_d, bs.get_south_prt(), nz, ny, nx);
+
+	extract_west<T>(from_d, bs.get_west_prt(), nz, ny, nx);
+
+	extract_east<T>(from_d, bs.get_east_prt(), nz, ny, nx);
+
+}
+
+
 template<typename T, class Vector>
 template<class FromBoundarySet>
 void BoundarySet<T, Vector>::copy(FromBoundarySet& from)
