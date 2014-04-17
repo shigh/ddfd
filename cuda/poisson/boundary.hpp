@@ -256,7 +256,7 @@ void set_all_boundaries(T* from_d, T* to_d, size_t nz, size_t ny, size_t nx);
  * \param to_d 3D device matrix to copy to
  */
 template<typename T>
-void set_all_boundaries(const DeviceBoundarySet<T>& bs, T* to_d,
+void set_all_boundaries(DeviceBoundarySet<T>& bs, T* to_d,
 						size_t nz, size_t ny, size_t nx);
 
 
@@ -266,7 +266,7 @@ void set_all_boundaries(const DeviceBoundarySet<T>& bs, T* to_d,
  * \param bs BoundarySet object to copy to
  */
 template<typename T>
-void extract_all_boundaries(const T* from_d, DeviceBoundarySet<T>& bs,
+void extract_all_boundaries(T* from_d, DeviceBoundarySet<T>& bs,
 							size_t nz, size_t ny, size_t nx);
 
 
