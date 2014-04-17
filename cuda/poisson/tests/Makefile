@@ -9,12 +9,15 @@ LDLIBS  += -lboost_unit_test_framework
 OBJS = tests.o test_cusp_3d.o test_solver_cusp.o test_boundary_set.o \
        test_two_domain.o test_grid.o
 
-.PHONY: all test clean
+.PHONY: all test mwe clean
 
 all: tests
 
 test: tests
 	./tests --log_level=test_suite
+
+mwe: mpi_mwe.cu
+	$(CC) $(CPPFLAGS) -o $@ $<
 
 tests: $(OBJS)
 	$(CC) $(LDLIBS) -o $@ $^
@@ -23,7 +26,7 @@ $(OBJS) : %.o : %.cu
 	$(CC) $(CPPFLAGS) -c -o $@ $<
 
 clean:
-	rm -vf nul *.o tests
+	rm -vf nul *.o tests mwe
 
 # For emacs flymake mode
 check-syntax:
