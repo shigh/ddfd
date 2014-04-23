@@ -7,6 +7,7 @@
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 #include <thrust/copy.h>
+#include <mpi.h>
 
 #include "cusp_poisson.hpp"
 #include "solvers.hpp"
@@ -41,6 +42,8 @@ void make_reference_solution(cusp::array1d<float, cusp::host_memory>& x_full_h,
 
 int main()
 {
+
+	MPI_Init(NULL, NULL);
 
 	const std::size_t global_nx = 10;
 	const std::size_t global_ny = global_nx;
@@ -91,6 +94,15 @@ int main()
 	HostBoundarySet<float> host_bs(nz, ny, nx);
 	cusp::array1d<float, cusp::device_memory> x(nx*ny*nz, 0);
 	thrust::device_vector<float> tmp(nx*ny*nz, 0);
+
+	std::vector<int> dimensions(3, 0);
+	std::vector<int> wrap_around(3, 0);
+	dimensions[0] = 2; dimensions[1] = 1; dimensions[1] = 1;
+
+	MPI_Comm cart_comm;
+	MPI_Cart_create(MPI_COMM_WORLD, 3, &dimensions[0],
+					&wrap_around[0], 1, &cart_comm);
+
 	const int n_iter = 10;
 	for(int i=0; i<n_iter; i++)
 	{
@@ -111,6 +123,8 @@ int main()
 	}
 
 	std::cout << error << std::endl;
+
+	MPI_Finalize();
 
 	return 0;
 
