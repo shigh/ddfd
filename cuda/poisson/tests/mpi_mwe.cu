@@ -127,28 +127,23 @@ void build_ref_b(std::size_t global_nz, float dz,
 }
 
 
-int main(int argc, char* argv[])
+void poisson3d(MPI_Comm cart_comm,
+			   std::vector<int> grid_dim,
+			   cusp::array1d<float, cusp::device_memory> x,
+			   cusp::array1d<float, cusp::device_memory> b,
+			   std::size_t nz, float dz,
+			   std::size_t ny, float dy,
+			   std::size_t nx, float dx,
+			   std::size_t overlap)
 {
 
-	int size, rank;
-	MPI_Init(&argc, &argv);
-	MPI_Comm_size(MPI_COMM_WORLD, &size);
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	
-	std::vector<int> dimensions(3, 1);
-	std::vector<int> wrap_around(3, 0);
-	dimensions[0] = 1; dimensions[1] = 1; dimensions[2] = size;
-
-	MPI_Comm cart_comm;
-	MPI_Cart_create(MPI_COMM_WORLD, 3, &dimensions[0],
-					&wrap_around[0], 1, &cart_comm);
 
 	int grid_rank;
 	std::vector<int> grid_coords(3);
 	MPI_Comm_rank(cart_comm, &grid_rank);
 	MPI_Cart_coords(cart_comm, grid_rank, 3, &grid_coords[0]);
 
-	bool has_east = grid_coords[2] < dimensions[2]-1;
+	bool has_east = grid_coords[2] < grid_dim[2]-1;
 	bool has_west = grid_coords[2] > 0;
 
 	std::vector<int> tmp_coords(3);		
@@ -167,28 +162,13 @@ int main(int argc, char* argv[])
 		MPI_Cart_rank(cart_comm, &tmp_coords[0], &west);
 	}
 
-	std::size_t global_nx = 10;
-	std::size_t global_ny = global_nx;
-	std::size_t global_nz = global_ny;
-
-	float dx = 2*M_PI/(global_nx-1.);
-	float dy = 2*M_PI/(global_ny-1.);
-	float dz = 2*M_PI/(global_nz-1.);
-
-	std::size_t overlap = 2;
-
-	std::size_t nz, ny, nx;
-	cusp::array1d<float, cusp::device_memory> b;
-	build_b(global_nz, dz, global_ny, dy, global_nx, dx,
-			overlap, grid_coords, b,
-			nz, ny, nx);
 
 	PoissonSolver3DCUSP<float> solver(b, nz, dz, ny, dy, nx, dx);
 
 	DeviceBoundarySet<float> device_bs(nz, ny, nx);
 	HostBoundarySet<float> host_bs(nz, ny, nx);
 	HostBoundarySet<float> host_bs_r(nz, ny, nx);
-	cusp::array1d<float, cusp::device_memory> x(nx*ny*nz, 0);
+
 	thrust::device_vector<float> tmp(nx*ny*nz, 0);
 
 
@@ -230,6 +210,56 @@ int main(int argc, char* argv[])
 
 
 	}
+
+
+}
+			   
+			   
+
+int main(int argc, char* argv[])
+{
+
+	int size, rank;
+	MPI_Init(&argc, &argv);
+	MPI_Comm_size(MPI_COMM_WORLD, &size);
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	
+	std::vector<int> dimensions(3, 1);
+	std::vector<int> wrap_around(3, 0);
+	dimensions[0] = 1; dimensions[1] = 1; dimensions[2] = size;
+
+	MPI_Comm cart_comm;
+	MPI_Cart_create(MPI_COMM_WORLD, 3, &dimensions[0],
+					&wrap_around[0], 1, &cart_comm);
+
+
+	int grid_rank;
+	std::vector<int> grid_coords(3);
+	MPI_Comm_rank(cart_comm, &grid_rank);
+	MPI_Cart_coords(cart_comm, grid_rank, 3, &grid_coords[0]);
+
+
+	std::size_t global_nx = 10;
+	std::size_t global_ny = global_nx;
+	std::size_t global_nz = global_ny;
+
+	float dx = 2*M_PI/(global_nx-1.);
+	float dy = 2*M_PI/(global_ny-1.);
+	float dz = 2*M_PI/(global_nz-1.);
+
+	std::size_t overlap = 2;
+
+	std::size_t nz, ny, nx;
+	cusp::array1d<float, cusp::device_memory> b;
+	build_b(global_nz, dz, global_ny, dy, global_nx, dx,
+			overlap, grid_coords, b,
+			nz, ny, nx);
+
+	cusp::array1d<float, cusp::device_memory> x(nx*ny*nz, 0);
+	
+	poisson3d(cart_comm, dimensions, x, b,
+			  nz, dz, ny, dy, nx, dx, overlap);
+
 
 	cusp::array1d<float, cusp::device_memory> xr;
 	build_ref_b(global_nz, dz, global_ny, dy,
