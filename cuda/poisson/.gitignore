@@ -9,3 +9,4 @@ tmp
 run_cusp_solver
 html
 latex
+*.txt

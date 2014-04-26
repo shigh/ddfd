@@ -426,6 +426,26 @@ void extract_all_boundaries(T* from_d, DeviceBoundarySet<T>& bs,
 }
 
 
+template<typename T>
+void extract_all_boundaries(T* from_d, DeviceBoundarySet<T>& bs,
+							size_t nz, size_t ny, size_t nx, size_t offset)
+{
+
+	extract_top<T>(from_d, bs.get_top_ptr(), nz, ny, nx, offset);
+
+	extract_bottom<T>(from_d, bs.get_bottom_ptr(), nz, ny, nx, offset);
+
+	extract_north<T>(from_d, bs.get_north_ptr(), nz, ny, nx, offset);
+	
+	extract_south<T>(from_d, bs.get_south_ptr(), nz, ny, nx, offset);
+
+	extract_west<T>(from_d, bs.get_west_ptr(), nz, ny, nx, offset);
+
+	extract_east<T>(from_d, bs.get_east_ptr(), nz, ny, nx, offset);
+
+}
+
+
 template<typename T, class Vector>
 template<class FromBoundarySet>
 void BoundarySet<T, Vector>::copy(FromBoundarySet& from)

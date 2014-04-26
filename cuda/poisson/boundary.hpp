@@ -270,5 +270,15 @@ void extract_all_boundaries(T* from_d, DeviceBoundarySet<T>& bs,
 							size_t nz, size_t ny, size_t nx);
 
 
+/*!
+ * Copy boundaries from 3D device matrix to BoundarySet object with offset
+ * \param from_d 3D device matrix to extract from
+ * \param bs BoundarySet object to copy to
+ */
+template<typename T>
+void extract_all_boundaries(T* from_d, DeviceBoundarySet<T>& bs,
+							size_t nz, size_t ny, size_t nx, size_t offset);
+
+
 #include "boundary.inl"
 

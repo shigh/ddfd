@@ -13,12 +13,11 @@
 #include "solvers.hpp"
 #include "test_utils.hpp"
 #include "grid.hpp"
+#include "utils.hpp"
 
 
 void make_reference_solution(cusp::array1d<float, cusp::host_memory>& x_full_h,
-							 const int nz, const float dz,
-							 const int ny, const float dy,
-							 const int nx, const float dx)
+							 int nz, float dz, int ny, float dy, int nx, float dx)
 {
 
 	// Reference solution	
@@ -59,11 +58,11 @@ void build_b(std::size_t global_nz, float dz,
 	std::size_t x_start = start_vec[x_location];
 	std::size_t x_end   = end_vec[x_location];
 	nx                  = x_end - x_start;
-	std::size_t y_start = start_vec[y_location];
-	std::size_t y_end   = end_vec[y_location];
+	std::size_t y_start = 0;//start_vec[y_location];
+	std::size_t y_end   = global_ny;//end_vec[y_location];
 	ny                  = y_end - y_start;
-	std::size_t z_start = start_vec[z_location];
-	std::size_t z_end   = end_vec[z_location];
+	std::size_t z_start = 0;//start_vec[z_location];
+	std::size_t z_end   = global_nz;//end_vec[z_location];
 	nz                  = z_end - z_start;	
 
 	// Local domain
@@ -79,6 +78,51 @@ void build_b(std::size_t global_nz, float dz,
 			}
 
 	b = cusp::array1d<float, cusp::device_memory>(b_h);
+
+}
+
+void build_ref_b(std::size_t global_nz, float dz,
+				 std::size_t global_ny, float dy,
+				 std::size_t global_nx, float dx,
+				 std::size_t overlap,
+				 const std::vector<int>& grid_coords,
+				 cusp::array1d<float, cusp::device_memory>& x)
+{
+
+	std::vector<std::size_t> start_vec;
+	std::vector<std::size_t> end_vec;
+	partition_domain(start_vec, end_vec, global_nz, 2, overlap);
+
+	std::size_t x_location = grid_coords[2];
+	std::size_t y_location = grid_coords[1];
+	std::size_t z_location = grid_coords[0];
+
+	std::size_t x_start = start_vec[x_location];
+	std::size_t x_end   = end_vec[x_location];
+	std::size_t nx      = x_end - x_start;
+	std::size_t y_start = 0;//start_vec[y_location];
+	std::size_t y_end   = global_ny;//end_vec[y_location];
+	std::size_t ny      = y_end - y_start;
+	std::size_t z_start = 0;//start_vec[z_location];
+	std::size_t z_end   = global_nz;//end_vec[z_location];
+	std::size_t nz      = z_end - z_start;	
+
+	cusp::array1d<float, cusp::host_memory> xr;
+	make_reference_solution(xr, global_nz, dz, global_ny, dy, global_nx, dx);
+
+	// Local domain
+	cusp::array1d<float, cusp::host_memory> x_h(nx*ny*nz, 0);
+	
+	std::size_t ind;
+	for(std::size_t k=z_start; k<z_end; k++)
+		for(std::size_t i=y_start; i<y_end; i++)
+			for(std::size_t j=x_start; j<x_end; j++)
+			{
+				ind = (j-x_start)+(i-y_start)*nx+(k-z_start)*nx*ny;
+				x_h[ind] = xr[j+i*nx+k*nx*ny];
+			}
+
+	x = cusp::array1d<float, cusp::device_memory>(x_h);
 
 }
 
@@ -108,16 +152,20 @@ int main(int argc, char* argv[])
 	bool has_west = grid_coords[2] > 0;
 
 	std::vector<int> tmp_coords(3);		
-	// int east;
-	// if(has_east)
-	// {
-	// 	coords = std::vector<int>(grid_coords);
-	// 	coords[2] += 1;
-	// 	for(int i=0; i<coords.size(); i++)
-	// 		std::cout << coords[i] << std::endl;
-	// 	//		MPI_Cart_rank(cart_comm, &coords[0], &east);
-	// 	//std::cout << east << std::endl;
-	//	}
+	int east = -1;
+	if(has_east)
+	{
+		tmp_coords = grid_coords;
+		tmp_coords[2] += 1;
+		MPI_Cart_rank(cart_comm, &tmp_coords[0], &east);
+	}
+	int west = -1;
+	if(has_west)
+	{
+		tmp_coords = grid_coords;
+		tmp_coords[2] -= 1;
+		MPI_Cart_rank(cart_comm, &tmp_coords[0], &west);
+	}
 
 	std::size_t global_nx = 10;
 	std::size_t global_ny = global_nx;
@@ -137,9 +185,9 @@ int main(int argc, char* argv[])
 
 	PoissonSolver3DCUSP<float> solver(b, nz, dz, ny, dy, nx, dx);
 
-	float error = 1;
 	DeviceBoundarySet<float> device_bs(nz, ny, nx);
 	HostBoundarySet<float> host_bs(nz, ny, nx);
+	HostBoundarySet<float> host_bs_r(nz, ny, nx);
 	cusp::array1d<float, cusp::device_memory> x(nx*ny*nz, 0);
 	thrust::device_vector<float> tmp(nx*ny*nz, 0);
 
@@ -148,22 +196,56 @@ int main(int argc, char* argv[])
 	for(int i=0; i<n_iter; i++)
 	{
 
+		std::cout << i << std::endl;
+
 	    solver.solve(x);
 
 		extract_all_boundaries(thrust::raw_pointer_cast(&x[0]), device_bs,
-							   nz, ny, nx);
+							   nz, ny, nx, overlap);
 		host_bs.copy(device_bs);
 
+		cudaDeviceSynchronize();
+
+		MPI_Status east_status, west_status;
+
 		if(has_east)
-		{
-			//MPI_Send(host_bs.get_east_ptr(), ny*nz, MPI_FLOAT, 
-		}
+			MPI_Send(host_bs.get_east_ptr(), ny*nz, MPI_FLOAT, east, 0, cart_comm);
+		if(has_east)
+			MPI_Recv(host_bs_r.get_east_ptr(), ny*nz, MPI_FLOAT, east, 0, cart_comm, &east_status);
+		
+		if(has_west)
+			MPI_Send(host_bs.get_west_ptr(), ny*nz, MPI_FLOAT, west, 0, cart_comm);
+		if(has_west)
+			MPI_Recv(host_bs_r.get_west_ptr(), ny*nz, MPI_FLOAT, west, 0, cart_comm, &west_status);
 
-		device_bs.copy(host_bs);
+		device_bs.copy(host_bs_r);		
 
-		set_all_boundaries(device_bs, thrust::raw_pointer_cast(&x[0]),
-						   nz, ny, nx);
+		if(has_east)
+			set_east<float>(device_bs.get_east_ptr(), thrust::raw_pointer_cast(&x[0]),
+							nz, ny, nx);
 
+		if(has_west)
+			set_west<float>(device_bs.get_west_ptr(), thrust::raw_pointer_cast(&x[0]),
+							nz, ny, nx);
+
+
+	}
+
+	cusp::array1d<float, cusp::device_memory> xr;
+	build_ref_b(global_nz, dz, global_ny, dy,
+				global_nx, dx,
+				overlap, grid_coords, xr);
+
+	float error = 0;
+	for(int i=0; i<xr.size(); i++)
+		error = max(error, (xr[i] - x[i])*(xr[i] - x[i]));
+
+	std::cout << error << std::endl;
+
+	if(rank==0)
+	{		
+		save_vector(x, "of.txt");
+		save_vector(xr, "ofb.txt");
 	}
 
 	MPI_Finalize();
