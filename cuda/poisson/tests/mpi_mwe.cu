@@ -156,10 +156,12 @@ void poisson3d(MPI_Comm cart_comm,
 	MPI_Comm_rank(cart_comm, &grid_rank);
 	MPI_Cart_coords(cart_comm, grid_rank, 3, &grid_coords[0]);
 
-	bool has_east  = grid_coords[2] < grid_dim[2]-1;
-	bool has_west  = grid_coords[2] > 0;
-	bool has_north = grid_coords[1] < grid_dim[1]-1;
-	bool has_south = grid_coords[1] > 0;
+	bool has_east   = grid_coords[2] < grid_dim[2]-1;
+	bool has_west   = grid_coords[2] > 0;
+	bool has_north  = grid_coords[1] < grid_dim[1]-1;
+	bool has_south  = grid_coords[1] > 0;
+	bool has_top    = grid_coords[0] < grid_dim[0]-1;
+	bool has_bottom = grid_coords[0] > 0;
 
 	std::vector<int> tmp_coords(3);		
 	int east = -1;
@@ -190,7 +192,20 @@ void poisson3d(MPI_Comm cart_comm,
 		tmp_coords[1] -= 1;
 		MPI_Cart_rank(cart_comm, &tmp_coords[0], &south);
 	}
-
+	int top = -1;
+	if(has_top)
+	{
+		tmp_coords = grid_coords;
+		tmp_coords[0] += 1;
+		MPI_Cart_rank(cart_comm, &tmp_coords[0], &top);
+	}
+	int bottom = -1;
+	if(has_bottom)
+	{
+		tmp_coords = grid_coords;
+		tmp_coords[0] -= 1;
+		MPI_Cart_rank(cart_comm, &tmp_coords[0], &bottom);
+	}
 
 
 	PoissonSolver3DCUSP<float> solver(b, nz, dz, ny, dy, nx, dx);
@@ -202,7 +217,7 @@ void poisson3d(MPI_Comm cart_comm,
 	thrust::device_vector<float> tmp(nx*ny*nz, 0);
 
 
-	const int n_iter = 10;
+	const int n_iter = 20;
 	for(int i=0; i<n_iter; i++)
 	{
 
@@ -215,9 +230,9 @@ void poisson3d(MPI_Comm cart_comm,
 
 		//cudaDeviceSynchronize();
 
-		MPI_Request send_west, send_east, send_north, send_south;
-		MPI_Request recv_west, recv_east, recv_north, recv_south;
-		MPI_Status  wait_west, wait_east, wait_north, wait_south;
+		MPI_Request send_west, send_east, send_north, send_south, send_top, send_bottom;
+		MPI_Request recv_west, recv_east, recv_north, recv_south, recv_top, recv_bottom;
+		MPI_Status  wait_west, wait_east, wait_north, wait_south, wait_top, wait_bottom;
 
 		if(has_east)
 		{
@@ -243,6 +258,18 @@ void poisson3d(MPI_Comm cart_comm,
 			MPI_Irecv(host_bs_r.get_south_ptr(), nx*nz, MPI_FLOAT, south, 0, cart_comm, &recv_south);
 		}
 
+		if(has_top)
+		{
+			MPI_Isend(host_bs.get_top_ptr(), nx*ny, MPI_FLOAT, top, 0, cart_comm, &send_top);
+			MPI_Irecv(host_bs_r.get_top_ptr(), nx*ny, MPI_FLOAT, top, 0, cart_comm, &recv_top);
+		}
+
+		if(has_bottom)
+		{
+			MPI_Isend(host_bs.get_bottom_ptr(), nx*ny, MPI_FLOAT, bottom, 0, cart_comm, &send_bottom);
+			MPI_Irecv(host_bs_r.get_bottom_ptr(), nx*ny, MPI_FLOAT, bottom, 0, cart_comm, &recv_bottom);
+		}
+
 
 		if(has_west)
 			MPI_Wait(&recv_west, &wait_west);
@@ -252,6 +279,10 @@ void poisson3d(MPI_Comm cart_comm,
 			MPI_Wait(&recv_north, &wait_north);
 		if(has_south)
 			MPI_Wait(&recv_south, &wait_south);
+		if(has_top)
+			MPI_Wait(&recv_top, &wait_top);
+		if(has_bottom)
+			MPI_Wait(&recv_bottom, &wait_south);
 
 		device_bs.copy(host_bs_r);		
 
@@ -267,6 +298,12 @@ void poisson3d(MPI_Comm cart_comm,
 		if(has_south)
 			set_south<float>(device_bs.get_south_ptr(), thrust::raw_pointer_cast(&x[0]),
 							nz, ny, nx);
+		if(has_top)
+			set_top<float>(device_bs.get_top_ptr(), thrust::raw_pointer_cast(&x[0]),
+							nz, ny, nx);
+		if(has_bottom)
+			set_bottom<float>(device_bs.get_bottom_ptr(), thrust::raw_pointer_cast(&x[0]),
+							nz, ny, nx);
 
 		if(has_west)
 			MPI_Wait(&send_west, &wait_west);
@@ -276,6 +313,10 @@ void poisson3d(MPI_Comm cart_comm,
 			MPI_Wait(&send_north, &wait_north);
 		if(has_south)
 			MPI_Wait(&send_south, &wait_south);
+		if(has_top)
+			MPI_Wait(&send_top, &wait_top);
+		if(has_bottom)
+			MPI_Wait(&send_bottom, &wait_bottom);
 
 	}
 
@@ -294,7 +335,8 @@ int main(int argc, char* argv[])
 	
 	std::vector<int> dimensions(3, 1);
 	std::vector<int> wrap_around(3, 0);
-	dimensions[0] = 1; dimensions[1] = sqrt(size); dimensions[2] = sqrt(size);
+	int gd = std::pow(size, 1./3);
+	dimensions[0] = gd; dimensions[1] = gd; dimensions[2] = gd;
 
 	MPI_Comm cart_comm;
 	MPI_Cart_create(MPI_COMM_WORLD, 3, &dimensions[0],
@@ -336,7 +378,7 @@ int main(int argc, char* argv[])
 
 	float error = 0;
 	for(int i=0; i<xr.size(); i++)
-		error = max(error, (xr[i] - x[i])*(xr[i] - x[i]));
+		error = max(error, std::abs(xr[i] - x[i]));
 
 	std::cout << error << std::endl;
 
