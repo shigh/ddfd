@@ -37,7 +37,7 @@ $(OBJS) $(MPI_OBJS) : %.o : %.cu
 	$(CC) $(CPPFLAGS) -c -o $@ $<
 
 clean:
-	rm -vf nul *.o tests mwe
+	rm -vf nul *.o tests mpi_mwe *.txt
 
 # For emacs flymake mode
 check-syntax:
