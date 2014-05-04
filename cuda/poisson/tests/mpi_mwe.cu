@@ -156,8 +156,10 @@ void poisson3d(MPI_Comm cart_comm,
 	MPI_Comm_rank(cart_comm, &grid_rank);
 	MPI_Cart_coords(cart_comm, grid_rank, 3, &grid_coords[0]);
 
-	bool has_east = grid_coords[2] < grid_dim[2]-1;
-	bool has_west = grid_coords[2] > 0;
+	bool has_east  = grid_coords[2] < grid_dim[2]-1;
+	bool has_west  = grid_coords[2] > 0;
+	bool has_north = grid_coords[1] < grid_dim[1]-1;
+	bool has_south = grid_coords[1] > 0;
 
 	std::vector<int> tmp_coords(3);		
 	int east = -1;
@@ -174,6 +176,21 @@ void poisson3d(MPI_Comm cart_comm,
 		tmp_coords[2] -= 1;
 		MPI_Cart_rank(cart_comm, &tmp_coords[0], &west);
 	}
+	int north = -1;
+	if(has_north)
+	{
+		tmp_coords = grid_coords;
+		tmp_coords[1] += 1;
+		MPI_Cart_rank(cart_comm, &tmp_coords[0], &north);
+	}
+	int south = -1;
+	if(has_south)
+	{
+		tmp_coords = grid_coords;
+		tmp_coords[1] -= 1;
+		MPI_Cart_rank(cart_comm, &tmp_coords[0], &south);
+	}
+
 
 
 	PoissonSolver3DCUSP<float> solver(b, nz, dz, ny, dy, nx, dx);
@@ -198,9 +215,9 @@ void poisson3d(MPI_Comm cart_comm,
 
 		//cudaDeviceSynchronize();
 
-		MPI_Request send_west, send_east;
-		MPI_Request recv_west, recv_east;
-		MPI_Status  wait_west, wait_east;
+		MPI_Request send_west, send_east, send_north, send_south;
+		MPI_Request recv_west, recv_east, recv_north, recv_south;
+		MPI_Status  wait_west, wait_east, wait_north, wait_south;
 
 		if(has_east)
 		{
@@ -214,25 +231,51 @@ void poisson3d(MPI_Comm cart_comm,
 			MPI_Irecv(host_bs_r.get_west_ptr(), ny*nz, MPI_FLOAT, west, 0, cart_comm, &recv_west);
 		}
 
+		if(has_north)
+		{
+			MPI_Isend(host_bs.get_north_ptr(), nx*nz, MPI_FLOAT, north, 0, cart_comm, &send_north);
+			MPI_Irecv(host_bs_r.get_north_ptr(), nx*nz, MPI_FLOAT, north, 0, cart_comm, &recv_north);
+		}
+
+		if(has_south)
+		{
+			MPI_Isend(host_bs.get_south_ptr(), nx*nz, MPI_FLOAT, south, 0, cart_comm, &send_south);
+			MPI_Irecv(host_bs_r.get_south_ptr(), nx*nz, MPI_FLOAT, south, 0, cart_comm, &recv_south);
+		}
+
+
 		if(has_west)
 			MPI_Wait(&recv_west, &wait_west);
 		if(has_east)
 			MPI_Wait(&recv_east, &wait_east);
+		if(has_north)
+			MPI_Wait(&recv_north, &wait_north);
+		if(has_south)
+			MPI_Wait(&recv_south, &wait_south);
 
 		device_bs.copy(host_bs_r);		
 
 		if(has_east)
 			set_east<float>(device_bs.get_east_ptr(), thrust::raw_pointer_cast(&x[0]),
 							nz, ny, nx);
-
 		if(has_west)
 			set_west<float>(device_bs.get_west_ptr(), thrust::raw_pointer_cast(&x[0]),
+							nz, ny, nx);
+		if(has_north)
+			set_north<float>(device_bs.get_north_ptr(), thrust::raw_pointer_cast(&x[0]),
+							nz, ny, nx);
+		if(has_south)
+			set_south<float>(device_bs.get_south_ptr(), thrust::raw_pointer_cast(&x[0]),
 							nz, ny, nx);
 
 		if(has_west)
 			MPI_Wait(&send_west, &wait_west);
 		if(has_east)
 			MPI_Wait(&send_east, &wait_east);
+		if(has_north)
+			MPI_Wait(&send_north, &wait_north);
+		if(has_south)
+			MPI_Wait(&send_south, &wait_south);
 
 	}
 
@@ -251,7 +294,7 @@ int main(int argc, char* argv[])
 	
 	std::vector<int> dimensions(3, 1);
 	std::vector<int> wrap_around(3, 0);
-	dimensions[0] = 1; dimensions[1] = 1; dimensions[2] = size;
+	dimensions[0] = 1; dimensions[1] = sqrt(size); dimensions[2] = sqrt(size);
 
 	MPI_Comm cart_comm;
 	MPI_Cart_create(MPI_COMM_WORLD, 3, &dimensions[0],
