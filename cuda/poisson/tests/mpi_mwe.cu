@@ -198,17 +198,26 @@ void poisson3d(MPI_Comm cart_comm,
 
 		//cudaDeviceSynchronize();
 
-		MPI_Status east_status, west_status;
+		MPI_Request send_west, send_east;
+		MPI_Request recv_west, recv_east;
+		MPI_Status  wait_west, wait_east;
 
 		if(has_east)
-			MPI_Send(host_bs.get_east_ptr(), ny*nz, MPI_FLOAT, east, 0, cart_comm);
-		if(has_east)
-			MPI_Recv(host_bs_r.get_east_ptr(), ny*nz, MPI_FLOAT, east, 0, cart_comm, &east_status);
+		{
+			MPI_Isend(host_bs.get_east_ptr(), ny*nz, MPI_FLOAT, east, 0, cart_comm, &send_east);
+			MPI_Irecv(host_bs_r.get_east_ptr(), ny*nz, MPI_FLOAT, east, 0, cart_comm, &recv_east);
+		}
 		
 		if(has_west)
-			MPI_Send(host_bs.get_west_ptr(), ny*nz, MPI_FLOAT, west, 0, cart_comm);
+		{
+			MPI_Isend(host_bs.get_west_ptr(), ny*nz, MPI_FLOAT, west, 0, cart_comm, &send_west);
+			MPI_Irecv(host_bs_r.get_west_ptr(), ny*nz, MPI_FLOAT, west, 0, cart_comm, &recv_west);
+		}
+
 		if(has_west)
-			MPI_Recv(host_bs_r.get_west_ptr(), ny*nz, MPI_FLOAT, west, 0, cart_comm, &west_status);
+			MPI_Wait(&recv_west, &wait_west);
+		if(has_east)
+			MPI_Wait(&recv_east, &wait_east);
 
 		device_bs.copy(host_bs_r);		
 
@@ -220,6 +229,10 @@ void poisson3d(MPI_Comm cart_comm,
 			set_west<float>(device_bs.get_west_ptr(), thrust::raw_pointer_cast(&x[0]),
 							nz, ny, nx);
 
+		if(has_west)
+			MPI_Wait(&send_west, &wait_west);
+		if(has_east)
+			MPI_Wait(&send_east, &wait_east);
 
 	}
 
