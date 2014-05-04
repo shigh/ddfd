@@ -28,23 +28,28 @@ enum Boundary
 /*!
  * Hold and move all boundaries of a 3D matrix
  */
-template<typename T, class Vector>
+template<typename T>
 class BoundarySet
 {
 
+protected:
+
+	T* north;
+	T* south;
+	T* west;
+	T* east;
+	T* top;
+	T* bottom;
+
+	virtual void allocate_buffer(T* buf, size_t N) = 0;
+	virtual void free_buffer(T* buf) = 0;
+
+	void init_all_buffers();
+	void free_all_buffers();
+
 public:
 
-	// These vector defs should be protected
-	// I am keeping them public to simplify dev
-	// Do not use them in calling code!!!
-	Vector north;
-	Vector south;
-	Vector west;
-	Vector east;
-	Vector top;
-	Vector bottom;
-
-
+	const cudaMemoryType memory_space;
 	const size_t nz;
 	const size_t ny;
 	const size_t nx;
@@ -55,15 +60,10 @@ public:
 	const size_t size_top;
 	const size_t size_bottom;
 
-	BoundarySet(size_t nz_, size_t ny_, size_t nx_);
+	BoundarySet(size_t nz_, size_t ny_, size_t nx_, cudaMemoryType memory_space_);
 
-	/*!
-	 * Copy all boundaries from a boundary set.
-	 * Intended for use moving boundaries to and from device/host.
-	 */
-	template<class FromBoundarySet>
-	void copy(FromBoundarySet& from);
-
+	template<class BS>
+	void copy(BS& from);
 
 	T* get_north_ptr();
 	T* get_south_ptr();
@@ -72,22 +72,29 @@ public:
 	T* get_top_ptr();
 	T* get_bottom_ptr();
 
+	virtual ~BoundarySet();
+
 };
 
 /*!
  * Boundaries stored on host
  */
 template<typename T>
-class HostBoundarySet: public BoundarySet<T, thrust::host_vector<T> >
+class HostBoundarySet: public BoundarySet<T>
 {
 
 private:
 
-	typedef BoundarySet<T, thrust::host_vector<T> > Parent;
+	void allocate_buffer(T* buf, size_t N);
+	void free_buffer(T* buf);
 
 public:
-	
-	HostBoundarySet(size_t nz_, size_t ny_, size_t nx_): Parent(nz_,ny_,nx_) {;}
+
+	HostBoundarySet(size_t nz_, size_t ny_, size_t nx_):
+		BoundarySet<T>(nz_, ny_, nx_, cudaMemoryTypeHost)
+	{this->init_all_buffers();}
+
+	~HostBoundarySet() {this->free_all_buffers();}
 
 };
 
@@ -95,16 +102,20 @@ public:
  * Boundaries stored on device
  */
 template<typename T>
-class DeviceBoundarySet: public BoundarySet<T, thrust::device_vector<T> >
+class DeviceBoundarySet: public BoundarySet<T>
 {
 
 private:
 
-	typedef BoundarySet<T, thrust::device_vector<T> > Parent;
+	void allocate_buffer(T* buf, size_t N);
+	void free_buffer(T* buf);
 
 public:
-	
-	DeviceBoundarySet(size_t nz_, size_t ny_, size_t nx_): Parent(nz_,ny_,nx_) {;}
+
+	DeviceBoundarySet(size_t nz_, size_t ny_, size_t nx_):
+		BoundarySet<T>(nz_, ny_, nx_, cudaMemoryTypeDevice) {this->init_all_buffers();}
+
+	~DeviceBoundarySet() {this->free_all_buffers();}
 
 };
 

@@ -446,63 +446,155 @@ void extract_all_boundaries(T* from_d, DeviceBoundarySet<T>& bs,
 }
 
 
-template<typename T, class Vector>
-template<class FromBoundarySet>
-void BoundarySet<T, Vector>::copy(FromBoundarySet& from)
+template<typename T>
+T* BoundarySet<T>::get_north_ptr()
 {
-
-	thrust::copy(from.north.begin(),  from.north.end(),  north.begin());
-	thrust::copy(from.south.begin(),  from.south.end(),  south.begin());
-	thrust::copy(from.west.begin(),   from.west.end(),   west.begin());
-	thrust::copy(from.east.begin(),   from.east.end(),   east.begin());
-	thrust::copy(from.top.begin(),    from.top.end(),    top.begin());
-	thrust::copy(from.bottom.begin(), from.bottom.end(), bottom.begin());
-				
+	return north;
 }
 
-template<typename T, class Vector>
-T* BoundarySet<T, Vector>::get_north_ptr()
+template<typename T>
+T* BoundarySet<T>::get_south_ptr()
 {
-	return thrust::raw_pointer_cast(&north[0]);
+	return south;
 }
 
-template<typename T, class Vector>
-T* BoundarySet<T, Vector>::get_south_ptr()
+template<typename T>
+T* BoundarySet<T>::get_west_ptr()
 {
-	return thrust::raw_pointer_cast(&south[0]);
+	return west;
 }
 
-template<typename T, class Vector>
-T* BoundarySet<T, Vector>::get_west_ptr()
+template<typename T>
+T* BoundarySet<T>::get_east_ptr()
 {
-	return thrust::raw_pointer_cast(&west[0]);
+	return east;
 }
 
-template<typename T, class Vector>
-T* BoundarySet<T, Vector>::get_east_ptr()
+template<typename T>
+T* BoundarySet<T>::get_top_ptr()
 {
-	return thrust::raw_pointer_cast(&east[0]);
+	return top;
 }
 
-template<typename T, class Vector>
-T* BoundarySet<T, Vector>::get_top_ptr()
+template<typename T>
+T* BoundarySet<T>::get_bottom_ptr()
 {
-	return thrust::raw_pointer_cast(&top[0]);
+	return bottom;
 }
 
-template<typename T, class Vector>
-T* BoundarySet<T, Vector>::get_bottom_ptr()
-{
-	return thrust::raw_pointer_cast(&bottom[0]);
-}
-
-template<typename T, class Vector>
-BoundarySet<T, Vector>::BoundarySet(size_t nz_, size_t ny_, size_t nx_):
+template<typename T>
+BoundarySet<T>::BoundarySet(size_t nz_, size_t ny_, size_t nx_, cudaMemoryType memory_space_):
 	nz(nz_), ny(ny_), nx(nx_),
+	memory_space(memory_space_),
 	size_north(nz_*nx_), size_south(nz_*nx_),
 	size_west(nz_*ny_),  size_east(nz_*ny_),
-	size_top(ny_*nx_),   size_bottom(ny_*nx_),
-	north(nz_*nx_, 0),   south(nz_*nx_, 0),
-	west(nz_*ny_, 0),    east(nz_*ny_, 0),
-	top(ny_*nx_, 0),     bottom(ny_*nx_, 0) {;}
+	size_top(ny_*nx_),   size_bottom(ny_*nx_)
+{
+	//init_all_buffers();
+}
 
+
+template<typename T>
+BoundarySet<T>::~BoundarySet()
+{
+	//free_all_buffers();
+}
+
+
+template<typename T>
+template<class BS>
+void BoundarySet<T>::copy(BS& from)
+{
+
+	cudaMemcpyKind kind;	
+	if(from.memory_space  == cudaMemoryTypeDevice &&
+	   this->memory_space == cudaMemoryTypeHost)
+		kind = cudaMemcpyDeviceToHost;
+	if(from.memory_space  == cudaMemoryTypeHost &&
+	   this->memory_space == cudaMemoryTypeDevice)
+		kind = cudaMemcpyHostToDevice;
+	if(from.memory_space  == cudaMemoryTypeHost &&
+	   this->memory_space == cudaMemoryTypeHost)
+		kind = cudaMemcpyHostToHost;
+	if(from.memory_space  == cudaMemoryTypeDevice &&
+	   this->memory_space == cudaMemoryTypeDevice)
+		kind = cudaMemcpyDeviceToDevice;
+
+	cudaMemcpy(this->get_north_ptr(), from.get_north_ptr(),
+			   this->size_north, kind);
+	cudaMemcpy(this->get_south_ptr(), from.get_south_ptr(),
+			   this->size_south, kind);
+	cudaMemcpy(this->get_west_ptr(), from.get_west_ptr(),
+			   this->size_west, kind);
+	cudaMemcpy(this->get_east_ptr(), from.get_east_ptr(),
+			   this->size_east, kind);
+	cudaMemcpy(this->get_top_ptr(), from.get_top_ptr(),
+			   this->size_top, kind);
+	cudaMemcpy(this->get_bottom_ptr(), from.get_bottom_ptr(),
+			   this->size_bottom, kind);
+
+}
+
+
+template<typename T>
+void BoundarySet<T>::init_all_buffers()
+{
+
+	allocate_buffer(north,  size_north);
+	allocate_buffer(south,  size_south);
+	allocate_buffer(west,   size_west);
+	allocate_buffer(east,   size_east);
+	allocate_buffer(top,    size_top);
+	allocate_buffer(bottom, size_bottom);
+
+}
+
+
+template<typename T>
+void BoundarySet<T>::free_all_buffers()
+{
+
+	free_buffer(north);
+	free_buffer(south);
+	free_buffer(west);
+	free_buffer(east);
+	free_buffer(top);
+	free_buffer(bottom);
+
+}
+
+
+template<typename T>
+void DeviceBoundarySet<T>::allocate_buffer(T* buf, size_t N)
+{
+
+	cudaMalloc((void**)&buf, sizeof(T)*N);
+
+}
+
+
+template<typename T>
+void DeviceBoundarySet<T>::free_buffer(T* buf)
+{
+
+	cudaFree((void*)buf);
+
+}
+
+
+template<typename T>
+void HostBoundarySet<T>::allocate_buffer(T* buf, size_t N)
+{
+
+	buf = (T*)malloc(sizeof(T)*N);
+
+}
+
+
+template<typename T>
+void HostBoundarySet<T>::free_buffer(T* buf)
+{
+
+	free(buf);
+
+}
