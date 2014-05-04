@@ -41,8 +41,8 @@ protected:
 	T* top;
 	T* bottom;
 
-	virtual void allocate_buffer(T* buf, size_t N) = 0;
-	virtual void free_buffer(T* buf) = 0;
+	virtual void allocate_buffer(T*& buf, size_t N) = 0;
+	virtual void free_buffer(T*& buf) = 0;
 
 	void init_all_buffers();
 	void free_all_buffers();
@@ -85,8 +85,8 @@ class HostBoundarySet: public BoundarySet<T>
 
 private:
 
-	void allocate_buffer(T* buf, size_t N);
-	void free_buffer(T* buf);
+	void allocate_buffer(T*& buf, size_t N);
+	void free_buffer(T*& buf);
 
 public:
 
@@ -107,8 +107,8 @@ class DeviceBoundarySet: public BoundarySet<T>
 
 private:
 
-	void allocate_buffer(T* buf, size_t N);
-	void free_buffer(T* buf);
+	void allocate_buffer(T*& buf, size_t N);
+	void free_buffer(T*& buf);
 
 public:
 

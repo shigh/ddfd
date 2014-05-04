@@ -508,30 +508,30 @@ void BoundarySet<T>::copy(BS& from)
 
 	cudaMemcpyKind kind;	
 	if(from.memory_space  == cudaMemoryTypeDevice &&
-	   this->memory_space == cudaMemoryTypeHost)
+	   memory_space == cudaMemoryTypeHost)
 		kind = cudaMemcpyDeviceToHost;
 	if(from.memory_space  == cudaMemoryTypeHost &&
-	   this->memory_space == cudaMemoryTypeDevice)
+	   memory_space == cudaMemoryTypeDevice)
 		kind = cudaMemcpyHostToDevice;
 	if(from.memory_space  == cudaMemoryTypeHost &&
-	   this->memory_space == cudaMemoryTypeHost)
+	   memory_space == cudaMemoryTypeHost)
 		kind = cudaMemcpyHostToHost;
 	if(from.memory_space  == cudaMemoryTypeDevice &&
-	   this->memory_space == cudaMemoryTypeDevice)
+	   memory_space == cudaMemoryTypeDevice)
 		kind = cudaMemcpyDeviceToDevice;
 
-	cudaMemcpy(this->get_north_ptr(), from.get_north_ptr(),
-			   this->size_north, kind);
-	cudaMemcpy(this->get_south_ptr(), from.get_south_ptr(),
-			   this->size_south, kind);
-	cudaMemcpy(this->get_west_ptr(), from.get_west_ptr(),
-			   this->size_west, kind);
-	cudaMemcpy(this->get_east_ptr(), from.get_east_ptr(),
-			   this->size_east, kind);
-	cudaMemcpy(this->get_top_ptr(), from.get_top_ptr(),
-			   this->size_top, kind);
-	cudaMemcpy(this->get_bottom_ptr(), from.get_bottom_ptr(),
-			   this->size_bottom, kind);
+	cudaMemcpy(north, from.get_north_ptr(),
+			   size_north*sizeof(T), kind);
+	cudaMemcpy(south, from.get_south_ptr(),
+			   size_south*sizeof(T), kind);
+	cudaMemcpy(west, from.get_west_ptr(),
+			   size_west*sizeof(T), kind);
+	cudaMemcpy(east, from.get_east_ptr(),
+			   size_east*sizeof(T), kind);
+	cudaMemcpy(top, from.get_top_ptr(),
+			   size_top*sizeof(T), kind);
+	cudaMemcpy(bottom, from.get_bottom_ptr(),
+			   size_bottom*sizeof(T), kind);
 
 }
 
@@ -565,7 +565,7 @@ void BoundarySet<T>::free_all_buffers()
 
 
 template<typename T>
-void DeviceBoundarySet<T>::allocate_buffer(T* buf, size_t N)
+void DeviceBoundarySet<T>::allocate_buffer(T*& buf, size_t N)
 {
 
 	cudaMalloc((void**)&buf, sizeof(T)*N);
@@ -574,7 +574,7 @@ void DeviceBoundarySet<T>::allocate_buffer(T* buf, size_t N)
 
 
 template<typename T>
-void DeviceBoundarySet<T>::free_buffer(T* buf)
+void DeviceBoundarySet<T>::free_buffer(T*& buf)
 {
 
 	cudaFree((void*)buf);
@@ -583,7 +583,7 @@ void DeviceBoundarySet<T>::free_buffer(T* buf)
 
 
 template<typename T>
-void HostBoundarySet<T>::allocate_buffer(T* buf, size_t N)
+void HostBoundarySet<T>::allocate_buffer(T*& buf, size_t N)
 {
 
 	buf = (T*)malloc(sizeof(T)*N);
@@ -592,7 +592,7 @@ void HostBoundarySet<T>::allocate_buffer(T* buf, size_t N)
 
 
 template<typename T>
-void HostBoundarySet<T>::free_buffer(T* buf)
+void HostBoundarySet<T>::free_buffer(T*& buf)
 {
 
 	free(buf);
