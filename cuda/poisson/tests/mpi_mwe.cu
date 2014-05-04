@@ -16,25 +16,28 @@
 #include "utils.hpp"
 
 
-void make_reference_solution(cusp::array1d<float, cusp::host_memory>& x_full_h,
+typedef cusp::array1d<float, cusp::host_memory> HostVector;
+typedef cusp::array1d<float, cusp::device_memory> DeviceVector;
+
+void make_reference_solution(HostVector& x_full_h,
 							 int nz, float dz, int ny, float dy, int nx, float dx)
 {
 
 	// Reference solution	
-	cusp::array1d<float, cusp::host_memory>   b_h(nz*ny*nx, 0);
-	cusp::array1d<float, cusp::device_memory> x_full(nz*ny*nx, 0);
+	HostVector   b_h(nz*ny*nx, 0);
+	DeviceVector x_full(nz*ny*nx, 0);
 
 	for(int k=0; k<nz; k++)
 		for(int i=0; i<ny; i++)
 			for(int j=0; j<nx; j++)
 				b_h[j+i*nx+k*nx*ny] = sin(j*dx)*sin(i*dy)*sin(k*dz);
 
-	cusp::array1d<float, cusp::device_memory> b_full(b_h);
+	DeviceVector b_full(b_h);
 	PoissonSolver3DCUSP<float> solver_full(b_full, nz, dz, ny, dy, nx, dx);
 
 	solver_full.solve(x_full);
 
-	x_full_h = cusp::array1d<float, cusp::host_memory>(x_full);
+	x_full_h = HostVector(x_full);
 
 }
 
@@ -43,7 +46,7 @@ void build_b(std::size_t global_nz, float dz,
 			 std::size_t global_nx, float dx,
 			 std::size_t overlap,
 			 const std::vector<int>& grid_coords,
-			 cusp::array1d<float, cusp::device_memory>& b,
+			 DeviceVector& b,
 			 std::size_t& nz, std::size_t& ny, std::size_t& nx)
 {
 
@@ -66,7 +69,7 @@ void build_b(std::size_t global_nz, float dz,
 	nz                  = z_end - z_start;	
 
 	// Local domain
-	cusp::array1d<float, cusp::host_memory>   b_h(nx*ny*nz, 0);
+	HostVector   b_h(nx*ny*nz, 0);
 	
 	std::size_t ind;
 	for(std::size_t k=z_start; k<z_end; k++)
@@ -77,7 +80,7 @@ void build_b(std::size_t global_nz, float dz,
 				b_h[ind] = sin(j*dx)*sin(i*dy)*sin(k*dz);
 			}
 
-	b = cusp::array1d<float, cusp::device_memory>(b_h);
+	b = DeviceVector(b_h);
 
 }
 
@@ -86,7 +89,7 @@ void build_ref_b(std::size_t global_nz, float dz,
 				 std::size_t global_nx, float dx,
 				 std::size_t overlap,
 				 const std::vector<int>& grid_coords,
-				 cusp::array1d<float, cusp::device_memory>& x)
+				 DeviceVector& x)
 {
 
 	std::vector<std::size_t> start_vec;
@@ -107,11 +110,11 @@ void build_ref_b(std::size_t global_nz, float dz,
 	std::size_t z_end   = global_nz;//end_vec[z_location];
 	std::size_t nz      = z_end - z_start;	
 
-	cusp::array1d<float, cusp::host_memory> xr;
+	HostVector xr;
 	make_reference_solution(xr, global_nz, dz, global_ny, dy, global_nx, dx);
 
 	// Local domain
-	cusp::array1d<float, cusp::host_memory> x_h(nx*ny*nz, 0);
+	HostVector x_h(nx*ny*nz, 0);
 	
 	std::size_t ind;
 	for(std::size_t k=z_start; k<z_end; k++)
@@ -122,15 +125,15 @@ void build_ref_b(std::size_t global_nz, float dz,
 				x_h[ind] = xr[j+i*global_nx+k*global_nx*global_ny];
 			}
 
-	x = cusp::array1d<float, cusp::device_memory>(x_h);
+	x = DeviceVector(x_h);
 
 }
 
 
 void poisson3d(MPI_Comm cart_comm,
 			   std::vector<int> grid_dim,
-			   cusp::array1d<float, cusp::device_memory>& x,
-			   cusp::array1d<float, cusp::device_memory>& b,
+			   DeviceVector& x,
+			   DeviceVector& b,
 			   std::size_t nz, float dz,
 			   std::size_t ny, float dy,
 			   std::size_t nx, float dx,
@@ -249,18 +252,18 @@ int main(int argc, char* argv[])
 	std::size_t overlap = 2;
 
 	std::size_t nz, ny, nx;
-	cusp::array1d<float, cusp::device_memory> b;
+	DeviceVector b;
 	build_b(global_nz, dz, global_ny, dy, global_nx, dx,
 			overlap, grid_coords, b,
 			nz, ny, nx);
 
-	cusp::array1d<float, cusp::device_memory> x(nx*ny*nz, 0);
+	DeviceVector x(nx*ny*nz, 0);
 	
 	poisson3d(cart_comm, dimensions, x, b,
 			  nz, dz, ny, dy, nx, dx, overlap);
 
 
-	cusp::array1d<float, cusp::device_memory> xr;
+	DeviceVector xr;
 	build_ref_b(global_nz, dz, global_ny, dy,
 				global_nx, dx,
 				overlap, grid_coords, xr);
