@@ -45,27 +45,32 @@ void build_b(std::size_t global_nz, float dz,
 			 std::size_t global_ny, float dy,
 			 std::size_t global_nx, float dx,
 			 std::size_t overlap,
+			 const std::vector<int>& grid_dim,
 			 const std::vector<int>& grid_coords,
 			 DeviceVector& b,
 			 std::size_t& nz, std::size_t& ny, std::size_t& nx)
 {
 
-	std::vector<std::size_t> start_vec;
-	std::vector<std::size_t> end_vec;
-	partition_domain(start_vec, end_vec, global_nz, 2, overlap);
-
 	std::size_t x_location = grid_coords[2];
 	std::size_t y_location = grid_coords[1];
 	std::size_t z_location = grid_coords[0];
 
+	std::vector<std::size_t> start_vec;
+	std::vector<std::size_t> end_vec;
+
+	partition_domain(start_vec, end_vec, global_nx, grid_dim[2], overlap);
 	std::size_t x_start = start_vec[x_location];
 	std::size_t x_end   = end_vec[x_location];
 	nx                  = x_end - x_start;
-	std::size_t y_start = 0;//start_vec[y_location];
-	std::size_t y_end   = global_ny;//end_vec[y_location];
+
+	partition_domain(start_vec, end_vec, global_ny, grid_dim[1], overlap);
+	std::size_t y_start = start_vec[y_location];
+	std::size_t y_end   = end_vec[y_location];
 	ny                  = y_end - y_start;
-	std::size_t z_start = 0;//start_vec[z_location];
-	std::size_t z_end   = global_nz;//end_vec[z_location];
+
+	partition_domain(start_vec, end_vec, global_nz, grid_dim[0], overlap);
+	std::size_t z_start = start_vec[z_location];
+	std::size_t z_end   = end_vec[z_location];
 	nz                  = z_end - z_start;	
 
 	// Local domain
@@ -88,26 +93,31 @@ void build_ref_b(std::size_t global_nz, float dz,
 				 std::size_t global_ny, float dy,
 				 std::size_t global_nx, float dx,
 				 std::size_t overlap,
+				 const std::vector<int>& grid_dim,
 				 const std::vector<int>& grid_coords,
 				 DeviceVector& x)
 {
-
-	std::vector<std::size_t> start_vec;
-	std::vector<std::size_t> end_vec;
-	partition_domain(start_vec, end_vec, global_nz, 2, overlap);
 
 	std::size_t x_location = grid_coords[2];
 	std::size_t y_location = grid_coords[1];
 	std::size_t z_location = grid_coords[0];
 
+	std::vector<std::size_t> start_vec;
+	std::vector<std::size_t> end_vec;
+
+	partition_domain(start_vec, end_vec, global_nx, grid_dim[2], overlap);
 	std::size_t x_start = start_vec[x_location];
 	std::size_t x_end   = end_vec[x_location];
 	std::size_t nx      = x_end - x_start;
-	std::size_t y_start = 0;//start_vec[y_location];
-	std::size_t y_end   = global_ny;//end_vec[y_location];
+
+	partition_domain(start_vec, end_vec, global_ny, grid_dim[1], overlap);
+	std::size_t y_start = start_vec[y_location];
+	std::size_t y_end   = end_vec[y_location];
 	std::size_t ny      = y_end - y_start;
-	std::size_t z_start = 0;//start_vec[z_location];
-	std::size_t z_end   = global_nz;//end_vec[z_location];
+
+	partition_domain(start_vec, end_vec, global_nz, grid_dim[0], overlap);
+	std::size_t z_start = start_vec[z_location];
+	std::size_t z_end   = end_vec[z_location];
 	std::size_t nz      = z_end - z_start;	
 
 	HostVector xr;
@@ -254,7 +264,7 @@ int main(int argc, char* argv[])
 	std::size_t nz, ny, nx;
 	DeviceVector b;
 	build_b(global_nz, dz, global_ny, dy, global_nx, dx,
-			overlap, grid_coords, b,
+			overlap, dimensions, grid_coords, b,
 			nz, ny, nx);
 
 	DeviceVector x(nx*ny*nz, 0);
@@ -266,7 +276,7 @@ int main(int argc, char* argv[])
 	DeviceVector xr;
 	build_ref_b(global_nz, dz, global_ny, dy,
 				global_nx, dx,
-				overlap, grid_coords, xr);
+				overlap, dimensions, grid_coords, xr);
 
 	float error = 0;
 	for(int i=0; i<xr.size(); i++)
