@@ -119,7 +119,7 @@ void build_ref_b(std::size_t global_nz, float dz,
 			for(std::size_t j=x_start; j<x_end; j++)
 			{
 				ind = (j-x_start)+(i-y_start)*nx+(k-z_start)*nx*ny;
-				x_h[ind] = xr[j+i*nx+k*nx*ny];
+				x_h[ind] = xr[j+i*global_nx+k*global_nx*global_ny];
 			}
 
 	x = cusp::array1d<float, cusp::device_memory>(x_h);
@@ -129,8 +129,8 @@ void build_ref_b(std::size_t global_nz, float dz,
 
 void poisson3d(MPI_Comm cart_comm,
 			   std::vector<int> grid_dim,
-			   cusp::array1d<float, cusp::device_memory> x,
-			   cusp::array1d<float, cusp::device_memory> b,
+			   cusp::array1d<float, cusp::device_memory>& x,
+			   cusp::array1d<float, cusp::device_memory>& b,
 			   std::size_t nz, float dz,
 			   std::size_t ny, float dy,
 			   std::size_t nx, float dx,
@@ -176,7 +176,6 @@ void poisson3d(MPI_Comm cart_comm,
 	for(int i=0; i<n_iter; i++)
 	{
 
-		std::cout << i << std::endl;
 
 	    solver.solve(x);
 
@@ -184,7 +183,7 @@ void poisson3d(MPI_Comm cart_comm,
 							   nz, ny, nx, overlap);
 		host_bs.copy(device_bs);
 
-		cudaDeviceSynchronize();
+		//cudaDeviceSynchronize();
 
 		MPI_Status east_status, west_status;
 
@@ -274,9 +273,19 @@ int main(int argc, char* argv[])
 
 	if(rank==0)
 	{		
-		save_vector(x, "of.txt");
-		save_vector(xr, "ofb.txt");
+		save_vector(x, "of0.txt");
+		save_vector(xr, "ofxr0.txt");
+		save_vector(b, "ofb0.txt");
+
 	}
+	if(rank==1)
+	{		
+		save_vector(x, "of1.txt");
+		save_vector(xr, "ofxr1.txt");
+		save_vector(b, "ofb1.txt");
+	}
+
+	std::cout << rank << ' ' << nz << ' ' << ny << ' ' << nx << std::endl;
 
 	MPI_Finalize();
 
