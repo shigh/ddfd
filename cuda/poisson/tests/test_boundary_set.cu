@@ -185,6 +185,24 @@ BOOST_AUTO_TEST_CASE( device_constructor )
 
 }
 
+BOOST_AUTO_TEST_CASE( boundary_sizes )
+{
+
+	int nx, ny, nz;
+	nx = 10;
+	ny = 20;
+	nz = 30;
+	HostBoundarySet<float> hbs(nz, ny, nx);
+	DeviceBoundarySet<float> dbs(nz, ny, nx);
+
+	BOOST_CHECK( hbs.size_north == nz*nx && hbs.size_south  == nz*nx &&
+				 hbs.size_west  == nz*ny && hbs.size_east   == nz*ny &&
+				 hbs.size_top   == ny*nx && hbs.size_bottom == ny*nx );
+
+	BOOST_CHECK( dbs.size_north == nz*nx && dbs.size_south  == nz*nx &&
+				 dbs.size_west  == nz*ny && dbs.size_east   == nz*ny &&
+				 dbs.size_top   == ny*nx && dbs.size_bottom == ny*nx );
+}
 
 BOOST_AUTO_TEST_CASE( host_get_ptr_not_null )
 {

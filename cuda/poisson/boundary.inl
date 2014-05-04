@@ -499,7 +499,10 @@ T* BoundarySet<T, Vector>::get_bottom_ptr()
 template<typename T, class Vector>
 BoundarySet<T, Vector>::BoundarySet(size_t nz_, size_t ny_, size_t nx_):
 	nz(nz_), ny(ny_), nx(nx_),
-	north(nz_*nx_, 0), south(nz_*nx_, 0),
-	west(nz_*ny_, 0),  east(nz_*ny_, 0),
-	top(ny_*nx_, 0),   bottom(ny_*nx_, 0) {;}
+	size_north(nz_*nx_), size_south(nz_*nx_),
+	size_west(nz_*ny_),  size_east(nz_*ny_),
+	size_top(ny_*nx_),   size_bottom(ny_*nx_),
+	north(nz_*nx_, 0),   south(nz_*nx_, 0),
+	west(nz_*ny_, 0),    east(nz_*ny_, 0),
+	top(ny_*nx_, 0),     bottom(ny_*nx_, 0) {;}
 

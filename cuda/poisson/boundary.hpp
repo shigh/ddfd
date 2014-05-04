@@ -48,6 +48,12 @@ public:
 	const size_t nz;
 	const size_t ny;
 	const size_t nx;
+	const size_t size_north;
+	const size_t size_south;
+	const size_t size_west;
+	const size_t size_east;
+	const size_t size_top;
+	const size_t size_bottom;
 
 	BoundarySet(size_t nz_, size_t ny_, size_t nx_);
 

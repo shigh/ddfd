@@ -236,38 +236,50 @@ void poisson3d(MPI_Comm cart_comm,
 
 		if(has_east)
 		{
-			MPI_Isend(host_bs.get_east_ptr(), ny*nz, MPI_FLOAT, east, 0, cart_comm, &send_east);
-			MPI_Irecv(host_bs_r.get_east_ptr(), ny*nz, MPI_FLOAT, east, 0, cart_comm, &recv_east);
+			MPI_Isend(host_bs.get_east_ptr(), host_bs.size_east,
+					  MPI_FLOAT, east, 0, cart_comm, &send_east);
+			MPI_Irecv(host_bs_r.get_east_ptr(), host_bs.size_east,
+					  MPI_FLOAT, east, 0, cart_comm, &recv_east);
 		}
 		
 		if(has_west)
 		{
-			MPI_Isend(host_bs.get_west_ptr(), ny*nz, MPI_FLOAT, west, 0, cart_comm, &send_west);
-			MPI_Irecv(host_bs_r.get_west_ptr(), ny*nz, MPI_FLOAT, west, 0, cart_comm, &recv_west);
+			MPI_Isend(host_bs.get_west_ptr(), host_bs.size_west,
+					  MPI_FLOAT, west, 0, cart_comm, &send_west);
+			MPI_Irecv(host_bs_r.get_west_ptr(), host_bs.size_west,
+					  MPI_FLOAT, west, 0, cart_comm, &recv_west);
 		}
 
 		if(has_north)
 		{
-			MPI_Isend(host_bs.get_north_ptr(), nx*nz, MPI_FLOAT, north, 0, cart_comm, &send_north);
-			MPI_Irecv(host_bs_r.get_north_ptr(), nx*nz, MPI_FLOAT, north, 0, cart_comm, &recv_north);
+			MPI_Isend(host_bs.get_north_ptr(), host_bs.size_north,
+					  MPI_FLOAT, north, 0, cart_comm, &send_north);
+			MPI_Irecv(host_bs_r.get_north_ptr(),  host_bs.size_north,
+					  MPI_FLOAT, north, 0, cart_comm, &recv_north);
 		}
 
 		if(has_south)
 		{
-			MPI_Isend(host_bs.get_south_ptr(), nx*nz, MPI_FLOAT, south, 0, cart_comm, &send_south);
-			MPI_Irecv(host_bs_r.get_south_ptr(), nx*nz, MPI_FLOAT, south, 0, cart_comm, &recv_south);
+			MPI_Isend(host_bs.get_south_ptr(),  host_bs.size_south,
+					  MPI_FLOAT, south, 0, cart_comm, &send_south);
+			MPI_Irecv(host_bs_r.get_south_ptr(),  host_bs.size_south,
+					  MPI_FLOAT, south, 0, cart_comm, &recv_south);
 		}
 
 		if(has_top)
 		{
-			MPI_Isend(host_bs.get_top_ptr(), nx*ny, MPI_FLOAT, top, 0, cart_comm, &send_top);
-			MPI_Irecv(host_bs_r.get_top_ptr(), nx*ny, MPI_FLOAT, top, 0, cart_comm, &recv_top);
+			MPI_Isend(host_bs.get_top_ptr(),  host_bs.size_top,
+					  MPI_FLOAT, top, 0, cart_comm, &send_top);
+			MPI_Irecv(host_bs_r.get_top_ptr(), host_bs.size_top,
+					  MPI_FLOAT, top, 0, cart_comm, &recv_top);
 		}
 
 		if(has_bottom)
 		{
-			MPI_Isend(host_bs.get_bottom_ptr(), nx*ny, MPI_FLOAT, bottom, 0, cart_comm, &send_bottom);
-			MPI_Irecv(host_bs_r.get_bottom_ptr(), nx*ny, MPI_FLOAT, bottom, 0, cart_comm, &recv_bottom);
+			MPI_Isend(host_bs.get_bottom_ptr(), host_bs.size_bottom,
+					  MPI_FLOAT, bottom, 0, cart_comm, &send_bottom);
+			MPI_Irecv(host_bs_r.get_bottom_ptr(), host_bs.size_bottom,
+					  MPI_FLOAT, bottom, 0, cart_comm, &recv_bottom);
 		}
 
 
