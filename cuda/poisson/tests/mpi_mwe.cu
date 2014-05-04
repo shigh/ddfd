@@ -251,7 +251,7 @@ int main(int argc, char* argv[])
 	MPI_Cart_coords(cart_comm, grid_rank, 3, &grid_coords[0]);
 
 
-	std::size_t global_nx = 10;
+	std::size_t global_nx = 20;
 	std::size_t global_ny = global_nx;
 	std::size_t global_nz = global_ny;
 
@@ -284,21 +284,21 @@ int main(int argc, char* argv[])
 
 	std::cout << error << std::endl;
 
-	if(rank==0)
-	{		
-		save_vector(x, "of0.txt");
-		save_vector(xr, "ofxr0.txt");
-		save_vector(b, "ofb0.txt");
+	// if(rank==0)
+	// {		
+	// 	save_vector(x, "of0.txt");
+	// 	save_vector(xr, "ofxr0.txt");
+	// 	save_vector(b, "ofb0.txt");
 
-	}
-	if(rank==1)
-	{		
-		save_vector(x, "of1.txt");
-		save_vector(xr, "ofxr1.txt");
-		save_vector(b, "ofb1.txt");
-	}
+	// }
+	// if(rank==1)
+	// {		
+	// 	save_vector(x, "of1.txt");
+	// 	save_vector(xr, "ofxr1.txt");
+	// 	save_vector(b, "ofb1.txt");
+	// }
 
-	std::cout << rank << ' ' << nz << ' ' << ny << ' ' << nx << std::endl;
+	// std::cout << rank << ' ' << nz << ' ' << ny << ' ' << nx << std::endl;
 
 	MPI_Finalize();
 
