@@ -12,9 +12,9 @@ MPI_LINK_FLAGS = -L/usr/lib64 -L/opt/software/OpenMPI/1.4.3--GCC-4.4.5/lib \
 
 CPPFLAGS+=$(CUSP)
 CPPFLAGS+=-I../
-#CPPFLAGS+=$(MPI_COMPILE_FLAGS)
+CPPFLAGS+=$(MPI_COMPILE_FLAGS)
 LDLIBS  += -lboost_unit_test_framework
-#LDLIBS  +=$(MPI_LINK_FLAGS)
+LDLIBS  +=$(MPI_LINK_FLAGS)
 
 OBJS = tests.o test_cusp_3d.o test_solver_cusp.o test_boundary_set.o \
        test_two_domain.o test_grid.o
