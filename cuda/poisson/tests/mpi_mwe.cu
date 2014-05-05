@@ -19,6 +19,11 @@
 typedef cusp::array1d<float, cusp::host_memory> HostVector;
 typedef cusp::array1d<float, cusp::device_memory> DeviceVector;
 
+
+/*!
+ * Make full domain reference solution
+ * \param[out] x_full_h Solution vector
+ */
 void make_reference_solution(HostVector& x_full_h,
 							 int nz, float dz, int ny, float dy, int nx, float dx)
 {
@@ -41,6 +46,15 @@ void make_reference_solution(HostVector& x_full_h,
 
 }
 
+/*!
+ * Build RHS
+ * \param grid_dim Global grid dimensions
+ * \param grid_coords Location in grid
+ * \param[out] b Solution vector
+ * \param[out] nz
+ * \param[out] ny
+ * \param[out] nx 
+ */
 void build_b(std::size_t global_nz, float dz,
 			 std::size_t global_ny, float dy,
 			 std::size_t global_nx, float dx,
@@ -89,7 +103,13 @@ void build_b(std::size_t global_nz, float dz,
 
 }
 
-void build_ref_b(std::size_t global_nz, float dz,
+/*!
+ * Example local reference solution
+ * \param grid_dim Global grid dimensions
+ * \param grid_coords Location in grid
+ * \param[out] x Solution vector
+ */
+void build_ref_x(std::size_t global_nz, float dz,
 				 std::size_t global_ny, float dy,
 				 std::size_t global_nx, float dx,
 				 std::size_t overlap,
@@ -140,6 +160,13 @@ void build_ref_b(std::size_t global_nz, float dz,
 }
 
 
+/*!
+ * Domain decomposition for poissons equation in 3D
+ * \param cart_comm Initialized 3D cart comm
+ * \param grid_dim Global grid dimensions
+ * \param[in,out] x Result vector and initial guess
+ * \param b Right hand size
+ */
 void poisson3d(MPI_Comm cart_comm,
 			   std::vector<int> grid_dim,
 			   DeviceVector& x,
@@ -151,11 +178,13 @@ void poisson3d(MPI_Comm cart_comm,
 {
 
 
+	// Get local grid location
 	int grid_rank;
 	std::vector<int> grid_coords(3);
 	MPI_Comm_rank(cart_comm, &grid_rank);
 	MPI_Cart_coords(cart_comm, grid_rank, 3, &grid_coords[0]);
 
+	// Determine which neighboors exist
 	bool has_east   = grid_coords[2] < grid_dim[2]-1;
 	bool has_west   = grid_coords[2] > 0;
 	bool has_north  = grid_coords[1] < grid_dim[1]-1;
@@ -163,6 +192,7 @@ void poisson3d(MPI_Comm cart_comm,
 	bool has_top    = grid_coords[0] < grid_dim[0]-1;
 	bool has_bottom = grid_coords[0] > 0;
 
+	// Get neighboor ranks
 	std::vector<int> tmp_coords(3);		
 	int east = -1;
 	if(has_east)
@@ -208,6 +238,8 @@ void poisson3d(MPI_Comm cart_comm,
 	}
 
 
+	// TODO Factor this into a template parameter
+	// Solver setup should be in the calling code
 	PoissonSolver3DCUSP<float> solver(b, nz, dz, ny, dy, nx, dx);
 
 	DeviceBoundarySet<float> device_bs(nz, ny, nx);
@@ -217,6 +249,7 @@ void poisson3d(MPI_Comm cart_comm,
 	thrust::device_vector<float> tmp(nx*ny*nz, 0);
 
 
+	// TODO Add as a function parameter
 	const int n_iter = 20;
 	for(int i=0; i<n_iter; i++)
 	{
@@ -228,12 +261,12 @@ void poisson3d(MPI_Comm cart_comm,
 							   nz, ny, nx, overlap);
 		host_bs.copy(device_bs);
 
-		//cudaDeviceSynchronize();
-
+		// Communicate with neighboors
 		MPI_Request send_west, send_east, send_north, send_south, send_top, send_bottom;
 		MPI_Request recv_west, recv_east, recv_north, recv_south, recv_top, recv_bottom;
 		MPI_Status  wait_west, wait_east, wait_north, wait_south, wait_top, wait_bottom;
 
+		// Post send and recieves
 		if(has_east)
 		{
 			MPI_Isend(host_bs.get_east_ptr(), host_bs.size_east,
@@ -282,7 +315,7 @@ void poisson3d(MPI_Comm cart_comm,
 					  MPI_FLOAT, bottom, 0, cart_comm, &recv_bottom);
 		}
 
-
+		// Wait for recvs so we can start updating solver boundaries
 		if(has_west)
 			MPI_Wait(&recv_west, &wait_west);
 		if(has_east)
@@ -296,6 +329,7 @@ void poisson3d(MPI_Comm cart_comm,
 		if(has_bottom)
 			MPI_Wait(&recv_bottom, &wait_south);
 
+		// Update solver boundaries
 		device_bs.copy(host_bs_r);		
 
 		if(has_east)
@@ -317,6 +351,7 @@ void poisson3d(MPI_Comm cart_comm,
 			set_bottom<float>(device_bs.get_bottom_ptr(), thrust::raw_pointer_cast(&x[0]),
 							nz, ny, nx);
 
+		// Wait for all sends to complete so we can start the next iteration
 		if(has_west)
 			MPI_Wait(&send_west, &wait_west);
 		if(has_east)
@@ -336,10 +371,13 @@ void poisson3d(MPI_Comm cart_comm,
 }
 			   
 			   
-
+/*
+ * Sample use of poisson3d function
+ */
 int main(int argc, char* argv[])
 {
 
+	// Setup MPI
 	int size, rank;
 	MPI_Init(&argc, &argv);
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -360,7 +398,7 @@ int main(int argc, char* argv[])
 	MPI_Comm_rank(cart_comm, &grid_rank);
 	MPI_Cart_coords(cart_comm, grid_rank, 3, &grid_coords[0]);
 
-
+	// Problem setup
 	std::size_t global_nx = 20;
 	std::size_t global_ny = global_nx;
 	std::size_t global_nz = global_ny;
@@ -377,38 +415,26 @@ int main(int argc, char* argv[])
 			overlap, dimensions, grid_coords, b,
 			nz, ny, nx);
 
+	// Solution vector
 	DeviceVector x(nx*ny*nz, 0);
-	
+
+	// Solve
 	poisson3d(cart_comm, dimensions, x, b,
 			  nz, dz, ny, dy, nx, dx, overlap);
 
 
+	// Get reference solution
 	DeviceVector xr;
-	build_ref_b(global_nz, dz, global_ny, dy,
+	build_ref_x(global_nz, dz, global_ny, dy,
 				global_nx, dx,
 				overlap, dimensions, grid_coords, xr);
 
+	// Calc error
 	float error = 0;
 	for(int i=0; i<xr.size(); i++)
 		error = max(error, std::abs(xr[i] - x[i]));
 
 	std::cout << error << std::endl;
-
-	// if(rank==0)
-	// {		
-	// 	save_vector(x, "of0.txt");
-	// 	save_vector(xr, "ofxr0.txt");
-	// 	save_vector(b, "ofb0.txt");
-
-	// }
-	// if(rank==1)
-	// {		
-	// 	save_vector(x, "of1.txt");
-	// 	save_vector(xr, "ofxr1.txt");
-	// 	save_vector(b, "ofb1.txt");
-	// }
-
-	// std::cout << rank << ' ' << nz << ' ' << ny << ' ' << nx << std::endl;
 
 	MPI_Finalize();
 
