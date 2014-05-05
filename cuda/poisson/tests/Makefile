@@ -19,7 +19,7 @@ LDLIBS  +=$(MPI_LINK_FLAGS)
 OBJS = tests.o test_cusp_3d.o test_solver_cusp.o test_boundary_set.o \
        test_two_domain.o test_grid.o
 
-MPI_OBJS = mpi_mwe.o
+MPI_OBJS = mpi_mwe.o example_problem.o
 
 .PHONY: all test mwe clean
 
@@ -28,9 +28,12 @@ all: tests
 test: tests
 	./tests --log_level=test_suite
 
-mpi_mwe: mpi_mwe.o
+grid.o : ../grid.cu
+	$(CC) $(CPPFLAGS) -c -o $@ $<
 
-tests: $(OBJS)
+mpi_mwe: mpi_mwe.o example_problem.o grid.o
+
+tests: $(OBJS) grid.o
 	$(CC) $(LDLIBS) -o $@ $^
 
 $(OBJS) $(MPI_OBJS) : %.o : %.cu
