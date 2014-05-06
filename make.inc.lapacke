@@ -1,9 +1,0 @@
-
-
-LAPACKINC = -I/home/user01/src/lapack-3.4.1/lapacke/include/ 
-LAPACKLIB = -L/home/user01/src/lapack-3.4.1/ \
-            -L/home/user01/src/ATLAS_Build/lib
-
-LAPACK_LN_FLAGS = -llapacke -llapack -lf77refblas -lgfortran
-
-LAPACK_TYPE = LAPACK_LAPACKE
