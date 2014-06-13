@@ -1,8 +1,6 @@
-numtools
+ddfd
 ========
 
-A collection of numerical tools I use in multiple applications and 
-repos.
+Domain Decomposition Finite Differences
 
-Feel free to use anything from here, but be warned it is not guaranteed 
-in any way.
+This project is currently in very early development, and is not ready for use.
